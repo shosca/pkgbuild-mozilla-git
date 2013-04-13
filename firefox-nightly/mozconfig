@@ -1,0 +1,18 @@
+. $topsrcdir/browser/config/mozconfig
+
+ac_add_options --prefix=/usr
+ac_add_options --libdir=/usr/lib
+
+ac_add_options --with-branding=browser/branding/nightly
+
+# Features
+ac_add_options --enable-startup-notification
+ac_add_options --enable-gstreamer
+#ac_add_options --enable-dmd
+
+ac_add_options --disable-crashreporter
+ac_add_options --disable-updater
+ac_add_options --disable-installer
+
+# PGO
+mk_add_options PROFILE_GEN_SCRIPT='EXTRA_TEST_ARGS=10 $(MAKE) -C $(MOZ_OBJDIR) pgo-profile-run'

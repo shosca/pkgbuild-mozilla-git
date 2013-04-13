@@ -1,0 +1,9 @@
+*.tar.xz
+*.tar.bz2
+*.tar.gz
+*.tar.lzma
+*/src
+*/pkg
+*.log
+
+*/mozilla-central
