@@ -7,7 +7,10 @@ DIRS=firefox-nightly
 DATE=$(shell date +"%Y%m%d")
 TIME=$(shell date +"%H%M")
 PACMAN=sudo pacman
+MAKEPKG=makepkg -sfLc
 PKGEXT=pkg.tar.xz
+GITFETCH=git fetch --all -p
+GITCLONE=git clone --mirror
 
 TARGETS=$(addsuffix /built, $(DIRS))
 
@@ -54,7 +57,7 @@ test:
 		sed -i "s/^pkgrel=[^ ]*/pkgrel=$(TIME)/" "$(PWD)/$*/PKGBUILD" ; \
 	fi ; \
 	rm -f $(PWD)/$*/*$(PKGEXT) $(PWD)/$*/*.log ; \
-	cd $* ; yes y$$'\n' | makepkg -sfL || exit 1 && \
+	cd $* ; yes y$$'\n' | $(MAKEPKG) || exit 1 && \
 	yes y$$'\n' | $(PACMAN) -U --force *$(PKGEXT) && \
 	cd $(PWD) && \
 	rm -f $(addsuffix *, $(addprefix $(LOCAL)/, $(shell grep -R '^pkgname' $*/PKGBUILD | sed -e 's/pkgname=//' -e 's/(//g' -e 's/)//g' -e "s/'//g" -e 's/"//g'))) && \
@@ -82,14 +85,14 @@ $(DIRS):
 	else \
 		if [ -f $(PWD)/$@/$$_gitname/HEAD ]; then \
 			echo "Updating $$_gitname" ; \
-			cd $(PWD)/$@/$$_gitname && git fetch --all -p && \
+			cd $(PWD)/$@/$$_gitname && $(GITFETCH) && \
 			if [ -f $(PWD)/$@/built ] && [ "$$(cat $(PWD)/$@/built)" != "$$(git log -1 | head -n1)" ]; then \
 				rm -f $(PWD)/$@/built ; \
 			fi ; \
 			cd $(PWD) ; \
 		else \
 			echo "Cloning $$_gitroot to $@/$$_gitname" ; \
-			git clone --mirror $$_gitroot $(PWD)/$@/$$_gitname ; \
+			$(GITCLONE) $$_gitroot $(PWD)/$@/$$_gitname ; \
 		fi ; \
 		$(MAKE) $@/built ; \
 	fi ; \
@@ -104,7 +107,7 @@ gitpull: $(PULL_TARGETS)
 	if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
 		echo "Updating $$_gitname" ; \
 		cd $(PWD)/$*/$$_gitname && \
-		git fetch --all -p && \
+		$(GITFETCH) && \
 		cd $(PWD) ; \
 	fi
 
