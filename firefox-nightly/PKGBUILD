@@ -5,8 +5,8 @@ _gitroot="git://github.com/mozilla/mozilla-central.git"
 _gitname="mozilla-central"
 
 pkgname=firefox-nightly
-pkgver=20130419
-pkgrel=0833
+pkgver=20130422
+pkgrel=0951
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -83,7 +83,8 @@ EOF
   # Use gold, as Mozilla can use some of its features, such as safe ICF
   ln -s /usr/bin/ld.gold "$srcdir/path/ld"
 
-  export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/lib/firefox-nightly"
+  #export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/lib/firefox-nightly"
+#  export LDFLAGS="$LDFLAGS -Wl,-rpath"
   export PYTHON="/usr/bin/python2"
 
   # _FORTIFY_SOURCE causes configure errors
