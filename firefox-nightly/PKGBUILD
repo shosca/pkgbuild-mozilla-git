@@ -6,7 +6,7 @@ _gitname="mozilla-central"
 
 pkgname=firefox-nightly
 pkgver=20130508
-pkgrel=0904
+pkgrel=1416
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
