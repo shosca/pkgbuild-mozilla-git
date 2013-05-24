@@ -1,6 +1,6 @@
 REPO=mozilla-git
 LOCAL=/home/serkan/public_html/arch/$(REPO)
-REMOTE=74.72.157.140:/home/serkan/public_html/arch/$(REPO)
+REMOTE=buttercup.local:/home/serkan/public_html/arch/$(REPO)
 
 PWD=$(shell pwd)
 DIRS=firefox-nightly
