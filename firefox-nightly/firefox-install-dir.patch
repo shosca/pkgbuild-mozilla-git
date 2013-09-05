@@ -1,9 +1,8 @@
-diff -r 8386a8f7289a config/baseconfig.mk
---- a/config/baseconfig.mk	Mon Feb 06 16:32:32 2012 -0500
-+++ b/config/baseconfig.mk	Tue Jul 17 02:52:45 2012 +0200
-@@ -1,9 +1,9 @@
- INCLUDED_AUTOCONF_MK = 1
- 
+diff --git a/config/baseconfig.mk b/config/baseconfig.mk
+index 50f4cd4..1e7c1f2 100644
+--- a/config/baseconfig.mk
++++ b/config/baseconfig.mk
+@@ -1,7 +1,7 @@
 -includedir := $(includedir)/$(MOZ_APP_NAME)-$(MOZ_APP_VERSION)
 -idldir = $(datadir)/idl/$(MOZ_APP_NAME)-$(MOZ_APP_VERSION)
 -installdir = $(libdir)/$(MOZ_APP_NAME)-$(MOZ_APP_VERSION)
