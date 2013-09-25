@@ -5,8 +5,8 @@ _gitroot="git://github.com/mozilla/mozilla-central.git"
 _gitname="mozilla-central"
 
 pkgname=firefox-nightly
-pkgver=20130923
-pkgrel=1144
+pkgver=20130925
+pkgrel=0710
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -42,7 +42,7 @@ ac_add_options --with-branding=browser/branding/nightly
 
 # system libraries
 ac_add_options --with-system-pixman
-ac_add_options --enable-system-hunspell
+#ac_add_options --enable-system-hunspell
 ac_add_options --enable-system-sqlite
 ac_add_options --enable-system-ffi
 
