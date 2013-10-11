@@ -1,8 +1,8 @@
 diff --git a/config/baseconfig.mk b/config/baseconfig.mk
-index 04fdf53..2261395 100644
+index 50f4cd4..1e7c1f2 100644
 --- a/config/baseconfig.mk
 +++ b/config/baseconfig.mk
-@@ -1,7 +1,7 @@
+@@ -1,4 +1,4 @@
 -includedir := $(includedir)/$(MOZ_APP_NAME)-$(MOZ_APP_VERSION)
 -idldir = $(datadir)/idl/$(MOZ_APP_NAME)-$(MOZ_APP_VERSION)
 -installdir = $(libdir)/$(MOZ_APP_NAME)-$(MOZ_APP_VERSION)
@@ -11,6 +11,3 @@ index 04fdf53..2261395 100644
 +idldir = $(datadir)/idl/$(MOZ_APP_NAME)
 +installdir = $(libdir)/$(MOZ_APP_NAME)
 +sdkdir = $(libdir)/$(MOZ_APP_NAME)-devel
- 
- ifndef INCLUDED_FUNCTIONS_MK
- include $(topsrcdir)/config/makefiles/functions.mk
