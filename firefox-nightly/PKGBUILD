@@ -5,8 +5,8 @@ _gitroot="git://github.com/mozilla/mozilla-central.git"
 _gitname="mozilla-central"
 
 pkgname=firefox-nightly
-pkgver=20131010
-pkgrel=1307
+pkgver=20131011
+pkgrel=0726
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -28,7 +28,7 @@ source=(git://github.com/mozilla/mozilla-central.git
         vendor.js)
 md5sums=('SKIP'
          '837806785e2f642c512c6454a9141975'
-         'ef8028073f215f92f310746ee3297d08'
+         '4deac57b41fddbabb26beada0119ac50'
          'c164319e8dd09354fd6a8d42b923a16c')
 
 build() {
