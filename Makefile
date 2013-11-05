@@ -61,7 +61,7 @@ test:
 	yes y$$'\n' | $(PACMAN) -U --force *$(PKGEXT) && \
 	cd $(PWD) && \
 	rm -f $(addsuffix *, $(addprefix $(LOCAL)/, $(shell grep -R '^pkgname' $*/PKGBUILD | sed -e 's/pkgname=//' -e 's/(//g' -e 's/)//g' -e "s/'//g" -e 's/"//g'))) && \
-	rm -f $(addsuffix /built, $(shell grep $* Makefile | cut -d':' -f1)) && \
+	rm -f $(addsuffix /built, $(shell grep ' $*' Makefile | cut -d':' -f1)) && \
 	repo-remove $(LOCAL)/$(REPO).db.tar.gz $(shell grep -R '^pkgname' $*/PKGBUILD | sed -e 's/pkgname=//' -e 's/(//g' -e 's/)//g' -e "s/'//g" -e 's/"//g') ; \
 	mv $*/*$(PKGEXT) $(LOCAL) && \
 	repo-add $(LOCAL)/$(REPO).db.tar.gz $(addsuffix *, $(addprefix $(LOCAL)/, $(shell grep -R '^pkgname' $*/PKGBUILD | sed -e 's/pkgname=//' -e 's/(//g' -e 's/)//g' -e "s/'//g" -e 's/"//g'))) && \
@@ -125,6 +125,7 @@ vers: $(VER_TARGETS)
 		if [ ! -z $$_realver ] && [ $$_oldver != $$_realver ]; then \
 			echo "$(subst -git,,$*) : $$_oldver $$_realver" ; \
 			sed -i "s/^_realver=[^ ]*/_realver=$$_realver/" "$(PWD)/$*/PKGBUILD" ; \
+			rm -f "$(PWD)/$*/built" ; \
 		fi ; \
 	fi
 

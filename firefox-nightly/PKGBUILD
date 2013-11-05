@@ -5,8 +5,8 @@ _gitroot="git://github.com/mozilla/mozilla-central.git"
 _gitname="mozilla-central"
 
 pkgname=firefox-nightly
-pkgver=20131104
-pkgrel=1450
+pkgver=20131105
+pkgrel=1009
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -31,6 +31,12 @@ md5sums=('SKIP'
          'cdd40dbd691d26365a3d4522b9cb86c6'
          'c164319e8dd09354fd6a8d42b923a16c')
 
+# Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
+# Note: These are for Arch Linux use ONLY. For your own distribution, please
+# get your own set of keys. Feel free to contact foutrelis@archlinux.org for
+# more information.
+_google_api_key=AIzaSyDwr302FpOSkGRpLlUpPThNTDPbXcIn_FM
+
 build() {
   cd ${srcdir}/${_gitname}
 
@@ -41,16 +47,27 @@ ac_add_options --libdir=/usr/lib
 ac_add_options --with-branding=browser/branding/nightly
 
 # system libraries
-ac_add_options --with-system-pixman
-#ac_add_options --enable-system-hunspell
+#ac_add_options --with-system-nspr
+#ac_add_options --with-system-nss
+ac_add_options --with-system-jpeg
+ac_add_options --with-system-zlib
+ac_add_options --with-system-bz2
+ac_add_options --with-system-png
+ac_add_options --with-system-libevent
+ac_add_options --with-system-libvpx
+
 ac_add_options --enable-system-sqlite
 ac_add_options --enable-system-ffi
 ac_add_options --enable-system-cairo
+ac_add_options --enable-system-pixman
+#ac_add_options --enable-system-hunspell
+
 #ac_add_options --enable-default-toolkit=cairo-gtk3
 
 # Features
 ac_add_options --enable-startup-notification
 ac_add_options --enable-gstreamer
+ac_add_options --enable-pulseaudio
 #ac_add_options --enable-dmd
 
 ac_add_options --disable-crashreporter
@@ -60,6 +77,9 @@ ac_add_options --disable-installer
 # PGO
 #mk_add_options PROFILE_GEN_SCRIPT='EXTRA_TEST_ARGS=10 \$(MAKE) -C \$(MOZ_OBJDIR) pgo-profile-run'
 EOF
+
+  echo -n "$_google_api_key" > google-api-key
+  echo "ac_add_options --with-google-api-keyfile=\"$PWD/google-api-key\"" >>.mozconfig
 
   patch -Np1 -i ../firefox-install-dir.patch
 
