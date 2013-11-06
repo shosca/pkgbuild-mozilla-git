@@ -32,9 +32,10 @@ pull:
 		$(LOCAL)/
 
 clean:
-	find -name '*$(PKGEXT)' -exec rm {} \;
-	find -name 'built' -exec rm {} \;
-	rm -f */*.log $(LOCAL)/*$(PKGEXT)
+	sudo rm -rf */*.log */pkg */src */logpipe* */*$(PKGEXT)
+
+reset: clean
+	sudo rm -f */built
 
 show:
 	@echo $(DATE)
@@ -65,12 +66,7 @@ test:
 	repo-remove $(LOCAL)/$(REPO).db.tar.gz $(shell grep -R '^pkgname' $*/PKGBUILD | sed -e 's/pkgname=//' -e 's/(//g' -e 's/)//g' -e "s/'//g" -e 's/"//g') ; \
 	mv $*/*$(PKGEXT) $(LOCAL) && \
 	repo-add $(LOCAL)/$(REPO).db.tar.gz $(addsuffix *, $(addprefix $(LOCAL)/, $(shell grep -R '^pkgname' $*/PKGBUILD | sed -e 's/pkgname=//' -e 's/(//g' -e 's/)//g' -e "s/'//g" -e 's/"//g'))) && \
-	if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
-		cd $(PWD)/$*/$$_gitname && \
-		git log -1 | head -n1 > $(PWD)/$*/built ; \
-	else \
-		touch $(PWD)/$*/built ; \
-	fi
+	touch $(PWD)/$*/built
 
 rebuildrepo:
 	cd $(LOCAL)
@@ -78,24 +74,7 @@ rebuildrepo:
 	repo-add $(LOCAL)/$(REPO).db.tar.gz $(LOCAL)/*$(PKGEXT)
 
 $(DIRS):
-	@_gitroot=$$(grep -R '^_gitroot' $(PWD)/$@/PKGBUILD | sed -e 's/_gitroot=//' -e "s/'//g" -e 's/"//g') && \
-	_gitname=$$(grep -R '^_gitname' $(PWD)/$@/PKGBUILD | sed -e 's/_gitname=//' -e "s/'//g" -e 's/"//g') && \
-	if [ -z $$_gitroot ]; then \
-		$(MAKE) $@/built ; \
-	else \
-		if [ -f $(PWD)/$@/$$_gitname/HEAD ]; then \
-			echo "Updating $$_gitname" ; \
-			cd $(PWD)/$@/$$_gitname && $(GITFETCH) && \
-			if [ -f $(PWD)/$@/built ] && [ "$$(cat $(PWD)/$@/built)" != "$$(git log -1 | head -n1)" ]; then \
-				rm -f $(PWD)/$@/built ; \
-			fi ; \
-			cd $(PWD) ; \
-		else \
-			echo "Cloning $$_gitroot to $@/$$_gitname" ; \
-			$(GITCLONE) $$_gitroot $(PWD)/$@/$$_gitname ; \
-		fi ; \
-		$(MAKE) $@/built ; \
-	fi ; \
+	@$(MAKE) $@/built
 
 PULL_TARGETS=$(addsuffix -pull, $(DIRS))
 
@@ -108,6 +87,9 @@ gitpull: $(PULL_TARGETS)
 		echo "Updating $$_gitname" ; \
 		cd $(PWD)/$*/$$_gitname && \
 		$(GITFETCH) && \
+		if [ -f $(PWD)/$*/built ] && [ "$$(cat $(PWD)/$*/built)" != "$$(git log -1 | head -n1)" ]; then \
+			rm -f $(PWD)/$*/built ; \
+		fi ; \
 		cd $(PWD) ; \
 	fi
 

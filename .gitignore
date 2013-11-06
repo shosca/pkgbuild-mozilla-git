@@ -2,6 +2,7 @@
 *.tar.bz2
 *.tar.gz
 *.tar.lzma
+*/built
 */src
 */pkg
 *.log
