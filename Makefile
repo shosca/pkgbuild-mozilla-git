@@ -21,7 +21,9 @@ all:
 	$(MAKE) build
 	$(MAKE) push
 
-push: pkgpush rebuildrepo
+push:
+	$(MAKE) rebuildrepo
+	$(MAKE) pkgpush
 
 pkgpush:
 	rsync -v --recursive --links --times -D --delete \
