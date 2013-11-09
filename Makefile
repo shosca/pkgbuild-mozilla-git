@@ -70,7 +70,11 @@ test:
 	rm -f *$(PKGEXT) *.log ; \
 	yes y$$'\n' | $(MAKEPKG) || exit 1 && \
 	yes y$$'\n' | $(PACMAN) -U --force *.$(PKGEXT) ; \
-	touch $(PWD)/$*/built ; \
+	if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
+		cd $(PWD)/$*/$$_gitname ; git log -1 | head -n1 > $(PWD)/$*/built ; \
+	else \
+		touch $(PWD)/$*/built ; \
+	fi ; \
 	cd $(PWD) ; \
 	rm -f $(addsuffix /built, $(shell grep ' $*' Makefile | cut -d':' -f1)) ; \
 
@@ -83,7 +87,9 @@ rebuildrepo:
 	repo-add $(LOCAL)/$(REPO).db.tar.gz $(LOCAL)/*$(PKGEXT)
 
 $(DIRS):
-	@$(MAKE) $@/built
+	@if [ ! -f $(PWD)/$@/built ]; then \
+		$(MAKE) $@/built ; \
+	fi
 
 PULL_TARGETS=$(addsuffix -pull, $(DIRS))
 
