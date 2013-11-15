@@ -5,8 +5,8 @@ _gitroot="git://github.com/mozilla/mozilla-central.git"
 _gitname="mozilla-central"
 
 pkgname=firefox-nightly
-pkgver=20131109
-pkgrel=0756
+pkgver=20131115
+pkgrel=0746
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -62,7 +62,7 @@ ac_add_options --enable-system-cairo
 ac_add_options --enable-system-pixman
 #ac_add_options --enable-system-hunspell
 
-#ac_add_options --enable-default-toolkit=cairo-gtk3
+ac_add_options --enable-default-toolkit=cairo-gtk3
 
 # Features
 ac_add_options --enable-startup-notification

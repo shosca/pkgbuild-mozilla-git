@@ -36,7 +36,7 @@ pull:
 		$(LOCAL)/
 
 clean:
-	sudo rm -rf */*.log */pkg */src */logpipe* */*$(PKGEXT)
+	sudo rm -rf */*.log */pkg */src */logpipe*
 
 reset: clean
 	sudo rm -f */built $(LOCAL)/*
@@ -82,9 +82,9 @@ test:
 
 rebuildrepo:
 	@cd $(LOCAL) ; \
-	mv $(PWD)/*/*.$(PKGEXT) . ; \
-	rm -f $(LOCAL)/$(REPO).db* ; \
-	repo-add $(LOCAL)/$(REPO).db.tar.gz $(LOCAL)/*$(PKGEXT)
+	rm -f $(LOCAL)/* ; \
+	cp $(PWD)/*/*.$(PKGEXT) . ; \
+	repo-add -q $(LOCAL)/$(REPO).db.tar.gz $(LOCAL)/*$(PKGEXT)
 
 $(DIRS):
 	@if [ ! -f $(PWD)/$@/built ]; then \
