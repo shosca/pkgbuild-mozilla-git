@@ -5,8 +5,8 @@ _gitroot="git://github.com/mozilla/mozilla-central.git"
 _gitname="mozilla-central"
 
 pkgname=firefox-nightly
-pkgver=20131119
-pkgrel=0742
+pkgver=20131121
+pkgrel=1247
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -37,7 +37,7 @@ md5sums=('SKIP'
 # more information.
 _google_api_key=AIzaSyDwr302FpOSkGRpLlUpPThNTDPbXcIn_FM
 
-build() {
+prepare() {
   cd ${srcdir}/${_gitname}
 
   cat >.mozconfig <<EOF
@@ -49,20 +49,20 @@ ac_add_options --with-branding=browser/branding/nightly
 # system libraries
 #ac_add_options --with-system-nspr
 #ac_add_options --with-system-nss
-ac_add_options --with-system-jpeg
-ac_add_options --with-system-zlib
-ac_add_options --with-system-bz2
-ac_add_options --with-system-png
-ac_add_options --with-system-libevent
-ac_add_options --with-system-libvpx
+#ac_add_options --with-system-jpeg
+#ac_add_options --with-system-zlib
+#ac_add_options --with-system-bz2
+#ac_add_options --with-system-png
+#ac_add_options --with-system-libevent
+#ac_add_options --with-system-libvpx
 
-ac_add_options --enable-system-sqlite
-ac_add_options --enable-system-ffi
-ac_add_options --enable-system-cairo
-ac_add_options --enable-system-pixman
+#ac_add_options --enable-system-sqlite
+#ac_add_options --enable-system-ffi
+#ac_add_options --enable-system-cairo
+#ac_add_options --enable-system-pixman
 #ac_add_options --enable-system-hunspell
 
-ac_add_options --enable-default-toolkit=cairo-gtk3
+#ac_add_options --enable-default-toolkit=cairo-gtk3
 
 # Features
 ac_add_options --enable-startup-notification
@@ -97,38 +97,23 @@ EOF
 
   rm -rf "$srcdir/path"
   mkdir "$srcdir/path"
-  export PATH="$srcdir/path:$PATH"
 
   # WebRTC build tries to execute "python" and expects Python 2
   ln -s /usr/bin/python2 "$srcdir/path/python"
 
   # Use gold, as Mozilla can use some of its features, such as safe ICF
   ln -s /usr/bin/ld.gold "$srcdir/path/ld"
+}
 
+build() {
+  cd ${srcdir}/${_gitname}
+
+  export PATH="$srcdir/path:$PATH"
   #export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/lib/firefox-nightly"
-#  export LDFLAGS="$LDFLAGS -Wl,-rpath"
   export PYTHON="/usr/bin/python2"
-
-  # _FORTIFY_SOURCE causes configure errors
   unset CPPFLAGS
 
   make -f client.mk build
-
-  # Enable PGO for x86_64 only. i686 currently has problems:
-  # Either segfaults since gcc 4.8, or the linker runs out of memory
-  # If you discover that PGO again works on i686, please file a bug
-  #if [[ $CARCH = x86_64 ]]; then
-    #export DISPLAY=:92
-    #Xvfb -nolisten tcp -extension GLX -screen 0 1280x1024x24 $DISPLAY &
-    #_fail=0
-
-    #make -f client.mk build MOZ_PGO=1 || _fail=1
-
-    #kill $! || true
-    #return $_fail
-  #else
-    #make -f client.mk build
-  #fi
 }
 
 package() {
