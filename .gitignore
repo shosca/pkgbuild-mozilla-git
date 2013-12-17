@@ -7,4 +7,4 @@
 */pkg
 *.log
 
-*/mozilla-central
+*/gecko-dev

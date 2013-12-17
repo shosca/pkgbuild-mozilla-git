@@ -1,12 +1,12 @@
 # $Id$
 # Maintainer: Jan Alexander Steffens (heftig) <jan.steffens@gmail.com>
 
-_gitroot="git://github.com/mozilla/mozilla-central.git"
-_gitname="mozilla-central"
+_gitroot="git://github.com/mozilla/gecko-dev"
+_gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=20131216
-pkgrel=0846
+pkgver=20131217
+pkgrel=0732
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -22,7 +22,7 @@ optdepends=('networkmanager: Location detection via available WiFi networks'
 url="http://www.mozilla.com/en-US/firefox/channel/"
 install=firefox-nightly.install
 options=(!emptydirs !makeflags)
-source=(git://github.com/mozilla/mozilla-central.git
+source=($_gitroot
         firefox-nightly.desktop
         firefox-install-dir.patch
         vendor.js)
