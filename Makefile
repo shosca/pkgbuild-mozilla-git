@@ -17,7 +17,7 @@ TARGETS=$(addsuffix /built, $(DIRS))
 .PHONY: $(DIRS)
 
 all:
-	$(MAKE) pull
+	$(MAKE) gitpull
 	$(MAKE) build
 	$(MAKE) push
 
