@@ -6,5 +6,5 @@
 */src
 */pkg
 *.log
-
+Makefile.mk
 */gecko-dev

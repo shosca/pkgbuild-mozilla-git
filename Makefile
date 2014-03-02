@@ -1,61 +1,64 @@
 REPO=mozilla-git
-LOCAL=~/public_html/arch/$(REPO)
-REMOTE=buttercup.local:~/public_html/arch/$(REPO)
-
 PWD=$(shell pwd)
 DIRS=firefox-nightly
 DATE=$(shell date +"%Y%m%d")
 TIME=$(shell date +"%H%M")
-PACMAN=yaourt
-MAKEPKG=makepkg -sfLc
+ARCHNSPAWN=arch-nspawn
+MKARCHROOT=/usr/bin/mkarchroot
+MAKECHROOTPKG=/usr/bin/makechrootpkg -c -u -r
 PKGEXT=pkg.tar.xz
 GITFETCH=git fetch --all -p
 GITCLONE=git clone --mirror
+CHROOTPATH64=/var/chroot64/$(REPO)
 
 TARGETS=$(addsuffix /built, $(DIRS))
+PULL_TARGETS=$(addsuffix -pull, $(DIRS))
+VER_TARGETS=$(addsuffix -ver, $(DIRS))
 
-.PHONY: $(DIRS)
+.PHONY: $(DIRS) checkchroot
 
 all:
 	$(MAKE) gitpull
 	$(MAKE) build
-	$(MAKE) push
-
-push:
-	$(MAKE) rebuildrepo
-	$(MAKE) pkgpush
-
-pkgpush:
-	rsync -v --recursive --links --times -D --delete \
-		$(LOCAL)/ \
-		$(REMOTE)/
-
-pull:
-	rsync -v --recursive --links --times -D --delete \
-		$(REMOTE)/ \
-		$(LOCAL)/
 
 clean:
 	sudo rm -rf */*.log */pkg */src */logpipe*
 
 reset: clean
-	sudo rm -f */built $(LOCAL)/*
+	sudo rm -f */built
 
-show:
-	@echo $(DATE)
-	@echo $(DIRS)
+checkchroot:
+	@if [ ! -d $(CHROOTPATH64) ]; then \
+		echo "Creating working chroot at $(CHROOTPATH64)/root" ; \
+		sudo mkdir -p $(CHROOTPATH64) ;\
+		[[ ! -f $(CHROOTPATH64)/root/.arch-chroot ]] && sudo $(MKARCHROOT) $(CHROOTPATH64)/root base-devel ; \
+		sudo sed -i -e '/^#\[multilib\]/ s,#,,' \
+			-i -e '/^\[multilib\]/{$$!N; s,#,,}' $(CHROOTPATH64)/root/etc/pacman.conf ; \
+		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root pacman \
+			-Syyu --noconfirm ; \
+		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root \
+			/bin/bash -c 'yes | pacman -S gcc-multilib gcc-libs-multilib' ; \
+		sudo mkdir -p $(CHROOTPATH64)/root/repo ;\
+		echo "# Added by $$PKG" | sudo tee -a $(CHROOTPATH64)/root/etc/pacman.conf ; \
+		echo "[$(REPO)]" | sudo tee -a $(CHROOTPATH64)/root/etc/pacman.conf ; \
+		echo "SigLevel = Never" | sudo tee -a $(CHROOTPATH64)/root/etc/pacman.conf ; \
+		echo "Server = file:///repo" | sudo tee -a $(CHROOTPATH64)/root/etc/pacman.conf ; \
+		echo "Recreating working repo $(REPO)" ; \
+		if ls */*.$(PKGEXT) &> /dev/null ; then \
+			sudo cp -f */*.$(PKGEXT) $(CHROOTPATH64)/root/repo ; \
+			sudo repo-add $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/*.$(PKGEXT) ; \
+		fi \
+	fi
 
-updateversions:
-	sed -i "s/^pkgver=[^ ]*/pkgver=$(DATE)/" */PKGBUILD ; \
-	sed -i "s/^pkgrel=[^ ]*/pkgrel=$(TIME)/" */PKGBUILD
+resetchroot:
+	sudo rm -rf $(CHROOTPATH64) && $(MAKE) checkchroot
 
-build: $(DIRS)
+build:
+	@$(MAKE) $(DIRS);
 
 test:
 	@echo "REPO    : $(REPO)" ; \
-	echo "LOCAL   : $(LOCAL)" ; \
-	echo "REMOTE  : $(REMOTE)" ; \
-	echo "PACMAN  : $(PACMAN)" ; \
+	echo "DIRS    : $(DIRS)" ; \
 	echo "PKGEXT  : $(PKGEXT)" ; \
 	echo "GITFETCH: $(GITFETCH)" ; \
 	echo "GITCLONE: $(GITCLONE)"
@@ -68,8 +71,12 @@ test:
 	fi ; \
 	cd $* ; \
 	rm -f *$(PKGEXT) *.log ; \
-	yes y$$'\n' | $(MAKEPKG) || exit 1 && \
-	yes y$$'\n' | $(PACMAN) -U --force *.$(PKGEXT) ; \
+	sudo $(MAKECHROOTPKG) $(CHROOTPATH64) || exit 1 && \
+	sudo rm -f $(addsuffix *, $(addprefix $(CHROOTPATH64)/root/repo/, $(shell grep -R '^pkgname' $*/PKGBUILD | sed -e 's/pkgname=//' -e 's/(//g' -e 's/)//g' -e "s/'//g" -e 's/"//g'))) ; \
+	sudo cp *.$(PKGEXT) $(CHROOTPATH64)/root/repo/ ; \
+	for f in *.$(PKGEXT) ; do \
+		sudo repo-add $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/"$$f" ; \
+	done ; \
 	if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
 		cd $(PWD)/$*/$$_gitname ; git log -1 | head -n1 > $(PWD)/$*/built ; \
 	else \
@@ -78,26 +85,17 @@ test:
 	cd $(PWD) ; \
 	rm -f $(addsuffix /built, $(shell grep ' $*' Makefile | cut -d':' -f1)) ; \
 
-#	rm -f $(addsuffix *, $(addprefix $(LOCAL)/, $(shell grep -R '^pkgname' $*/PKGBUILD | sed -e 's/pkgname=//' -e 's/(//g' -e 's/)//g' -e "s/'//g" -e 's/"//g'))) ; \
-
-rebuildrepo:
-	@cd $(LOCAL) ; \
-	rm -f $(LOCAL)/* ; \
-	cp $(PWD)/*/*.$(PKGEXT) . ; \
-	repo-add -q $(LOCAL)/$(REPO).db.tar.gz $(LOCAL)/*$(PKGEXT)
-
-$(DIRS):
+$(DIRS): checkchroot
 	@if [ ! -f $(PWD)/$@/built ]; then \
 		$(MAKE) $@/built ; \
 	fi
-
-PULL_TARGETS=$(addsuffix -pull, $(DIRS))
 
 gitpull: $(PULL_TARGETS)
 
 %-pull:
 	@_gitroot=$$(grep -R '^_gitroot' $(PWD)/$*/PKGBUILD | sed -e 's/_gitroot=//' -e "s/'//g" -e 's/"//g') && \
 	_gitname=$$(grep -R '^_gitname' $(PWD)/$*/PKGBUILD | sed -e 's/_gitname=//' -e "s/'//g" -e 's/"//g') && \
+	echo "Pulling $*" ; \
 	if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
 		echo "Updating $$_gitname" ; \
 		cd $(PWD)/$*/$$_gitname && \
@@ -107,8 +105,6 @@ gitpull: $(PULL_TARGETS)
 		fi ; \
 		cd $(PWD) ; \
 	fi
-
-VER_TARGETS=$(addsuffix -ver, $(DIRS))
 
 vers: $(VER_TARGETS)
 
@@ -126,3 +122,4 @@ vers: $(VER_TARGETS)
 		fi ; \
 	fi
 
+-include Makefile.mk
