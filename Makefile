@@ -37,12 +37,13 @@ checkchroot:
 		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root pacman \
 			-Syyu --noconfirm ; \
 		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root \
-			/bin/bash -c 'yes | pacman -S gcc-multilib gcc-libs-multilib' ; \
+			/bin/bash -c 'yes | pacman -S gcc-multilib gcc-libs-multilib p7zip' ; \
 		sudo mkdir -p $(CHROOTPATH64)/root/repo ;\
 		echo "# Added by $$PKG" | sudo tee -a $(CHROOTPATH64)/root/etc/pacman.conf ; \
 		echo "[$(REPO)]" | sudo tee -a $(CHROOTPATH64)/root/etc/pacman.conf ; \
 		echo "SigLevel = Never" | sudo tee -a $(CHROOTPATH64)/root/etc/pacman.conf ; \
 		echo "Server = file:///repo" | sudo tee -a $(CHROOTPATH64)/root/etc/pacman.conf ; \
+		echo "COMPRESSXZ=(7z a dummy -txz -si -so)" | sudo tee -a $(CHROOTPATH64)/root/etc/makepkg.conf ; \
 		echo "Recreating working repo $(REPO)" ; \
 		if ls */*.$(PKGEXT) &> /dev/null ; then \
 			sudo cp -f */*.$(PKGEXT) $(CHROOTPATH64)/root/repo ; \

@@ -6,7 +6,7 @@ _gitname="gecko-dev"
 
 pkgname=firefox-nightly
 pkgver=20140305
-pkgrel=0606
+pkgrel=0957
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -60,6 +60,7 @@ ac_add_options --with-system-png
 ac_add_options --with-system-libevent
 ac_add_options --with-system-libvpx
 
+ac_add_options --enable-skia
 ac_add_options --enable-jemalloc
 ac_add_options --enable-system-sqlite
 ac_add_options --enable-system-ffi
