@@ -4,7 +4,7 @@ DIRS=firefox-nightly
 DATE=$(shell date +"%Y%m%d")
 TIME=$(shell date +"%H%M")
 ARCHNSPAWN=arch-nspawn
-MKARCHROOT=/usr/bin/mkarchroot
+MKARCHROOT=/usr/bin/mkarchroot -C /usr/share/devtools/pacman-multilib.conf
 MAKECHROOTPKG=/usr/bin/makechrootpkg -c -u -r
 PKGEXT=pkg.tar.xz
 GITFETCH=git fetch --all -p
@@ -34,10 +34,6 @@ checkchroot:
 		[[ ! -f $(CHROOTPATH64)/root/.arch-chroot ]] && sudo $(MKARCHROOT) $(CHROOTPATH64)/root base-devel ; \
 		sudo sed -i -e '/^#\[multilib\]/ s,#,,' \
 			-i -e '/^\[multilib\]/{$$!N; s,#,,}' $(CHROOTPATH64)/root/etc/pacman.conf ; \
-		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root pacman \
-			-Syyu --noconfirm ; \
-		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root \
-			/bin/bash -c 'yes | pacman -S gcc-multilib gcc-libs-multilib p7zip' ; \
 		sudo mkdir -p $(CHROOTPATH64)/root/repo ;\
 		echo "# Added by $$PKG" | sudo tee -a $(CHROOTPATH64)/root/etc/pacman.conf ; \
 		echo "[$(REPO)]" | sudo tee -a $(CHROOTPATH64)/root/etc/pacman.conf ; \
@@ -48,7 +44,11 @@ checkchroot:
 		if ls */*.$(PKGEXT) &> /dev/null ; then \
 			sudo cp -f */*.$(PKGEXT) $(CHROOTPATH64)/root/repo ; \
 			sudo repo-add $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/*.$(PKGEXT) ; \
-		fi \
+		fi ; \
+		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root pacman \
+			-Syyu --noconfirm ; \
+		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root \
+			/bin/bash -c 'yes | pacman -S gcc-multilib gcc-libs-multilib p7zip' ; \
 	fi
 
 resetchroot:
