@@ -5,8 +5,8 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=20140325
-pkgrel=0721
+pkgver=20140327
+pkgrel=0835
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -53,19 +53,19 @@ ac_add_options --with-branding=browser/branding/nightly
 # system libraries
 #ac_add_options --with-system-nspr
 #ac_add_options --with-system-nss
-ac_add_options --with-system-jpeg
-ac_add_options --with-system-zlib
-ac_add_options --with-system-bz2
-ac_add_options --with-system-png
-ac_add_options --with-system-libevent
+#ac_add_options --with-system-jpeg
+#ac_add_options --with-system-zlib
+#ac_add_options --with-system-bz2
+#ac_add_options --with-system-png
+#ac_add_options --with-system-libevent
 #ac_add_options --with-system-libvpx
 
-ac_add_options --enable-skia
-ac_add_options --enable-jemalloc
-ac_add_options --enable-system-sqlite
-ac_add_options --enable-system-ffi
-ac_add_options --enable-system-cairo
-ac_add_options --enable-system-pixman
+#ac_add_options --enable-skia
+#ac_add_options --enable-jemalloc
+#ac_add_options --enable-system-sqlite
+#ac_add_options --enable-system-ffi
+#ac_add_options --enable-system-cairo
+#ac_add_options --enable-system-pixman
 ac_add_options --enable-system-hunspell
 
 #ac_add_options --enable-default-toolkit=cairo-gtk3
