@@ -56,8 +56,7 @@ recreaterepo:
 		sudo repo-add $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/*.$(PKGEXT) ; \
 	fi ; \
 
-build:
-	@$(MAKE) $(DIRS);
+build: $(DIRS)
 
 test:
 	@echo "REPO    : $(REPO)" ; \
