@@ -1,6 +1,6 @@
 REPO=mozilla-git
 PWD=$(shell pwd)
-DIRS=firefox-nightly
+DIRS=$(shell ls -d */ | sed -e 's/\///' )
 ARCHNSPAWN=arch-nspawn
 MKARCHROOT=/usr/bin/mkarchroot -C /usr/share/devtools/pacman-multilib.conf
 MAKECHROOTPKG=/usr/bin/makechrootpkg -c -u -r
