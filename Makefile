@@ -86,6 +86,8 @@ test:
 
 $(DIRS): checkchroot
 	@if [ ! -f $(PWD)/$@/built ]; then \
+		_pkgrel=$$(grep -R '^pkgrel' $(PWD)/$@/PKGBUILD | sed -e 's/pkgrel=//' -e "s/'//g" -e 's/"//g') && \
+		sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=$$(($$_pkgrel+1))/" $(PWD)/$@/PKGBUILD ; \
 		$(MAKE) $@/built ; \
 	fi
 
@@ -101,6 +103,9 @@ gitpull: $(PULL_TARGETS)
 		$(GITFETCH) && \
 		if [ -f $(PWD)/$*/built ] && [ "$$(cat $(PWD)/$*/built)" != "$$(git log -1 | head -n1)" ]; then \
 			rm -f $(PWD)/$*/built ; \
+			_newpkgver="r$$(git --git-dir=$(PWD)/$*/$$_gitname rev-list --count HEAD).$$(git --git-dir=$(PWD)/$*/$$_gitname rev-parse --short HEAD)" ; \
+			sed --follow-symlinks -i "s/^pkgver=[^ ]*/pkgver=$$_newpkgver/" $(PWD)/$*/PKGBUILD ; \
+			sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=0/" $(PWD)/$*/PKGBUILD ; \
 		fi ; \
 		cd $(PWD) ; \
 	fi
@@ -109,16 +114,10 @@ vers: $(VER_TARGETS)
 
 %-ver:
 	@_gitname=$$(grep -R '^_gitname' $(PWD)/$*/PKGBUILD | sed -e 's/_gitname=//' -e "s/'//g" -e 's/"//g') && \
-	if [ -d $(PWD)/$*/src/$$_gitname ]; then \
-		cd $(PWD)/$*/src/$$_gitname && \
-		autoreconf -f > /dev/null 2>&1 && \
-		_oldver=$$(grep -R '^_realver' $(PWD)/$*/PKGBUILD | sed -e 's/_realver=//' -e "s/'//g" -e 's/"//g') && \
-		_realver=$$(grep 'PACKAGE_VERSION=' configure | head -n1 | sed -e 's/PACKAGE_VERSION=//' -e "s/'//g") ; \
-		if [ ! -z $$_realver ] && [ $$_oldver != $$_realver ]; then \
-			echo "$(subst -git,,$*) : $$_oldver $$_realver" ; \
-			sed -i "s/^_realver=[^ ]*/_realver=$$_realver/" "$(PWD)/$*/PKGBUILD" ; \
-			rm -f "$(PWD)/$*/built" ; \
-		fi ; \
+	if [ -d $(PWD)/$*/$$_gitname ]; then \
+		_newpkgver="r$$(git --git-dir=$(PWD)/$*/$$_gitname rev-list --count HEAD).$$(git --git-dir=$(PWD)/$*/$$_gitname rev-parse --short HEAD)" ; \
+		sed --follow-symlinks -i "s/^pkgver=[^ ]*/pkgver=$$_newpkgver/" $(PWD)/$*/PKGBUILD ; \
+		echo "$* r$$(git --git-dir=$(PWD)/$*/$$_gitname rev-list --count HEAD).$$(git --git-dir=$(PWD)/$*/$$_gitname rev-parse --short HEAD)" ; \
 	fi
 
 updateshas: $(SHA_TARGETS)
