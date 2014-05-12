@@ -5,7 +5,7 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r358444.f080a62
+pkgver=r359682.ad646f3
 pkgrel=1
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
@@ -70,7 +70,7 @@ ac_add_options --enable-jemalloc
 ac_add_options --enable-system-sqlite
 ac_add_options --enable-system-ffi
 ac_add_options --enable-system-cairo
-#ac_add_options --enable-system-pixman
+ac_add_options --enable-system-pixman
 ac_add_options --enable-system-hunspell
 
 #ac_add_options --enable-default-toolkit=cairo-gtk3
@@ -120,7 +120,7 @@ build() {
   cd ${srcdir}/${_gitname}
 
   export PATH="$srcdir/path:$PATH"
-  #export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/lib/firefox-nightly"
+  export LDFLAGS="-Wl,-rpath,/usr/lib/firefox-nightly -Wl,-O1,--sort-common,--hash-style=gnu,--as-needed"
   export PYTHON="/usr/bin/python2"
   unset CPPFLAGS
 

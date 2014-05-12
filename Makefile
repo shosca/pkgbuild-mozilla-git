@@ -39,6 +39,8 @@ checkchroot:
 		echo "SigLevel = Never" | sudo tee -a $(CHROOTPATH64)/root/etc/pacman.conf ; \
 		echo "Server = file:///repo" | sudo tee -a $(CHROOTPATH64)/root/etc/pacman.conf ; \
 		echo "COMPRESSXZ=(7z a dummy -txz -si -so)" | sudo tee -a $(CHROOTPATH64)/root/etc/makepkg.conf ; \
+		echo 'LANG="en_US.UTF-8"' | sudo tee -a $(CHROOTPATH64)/root/etc/locale.conf ; \
+		echo 'LANGUAGE="en_US:en"' | sudo tee -a $(CHROOTPATH64)/root/etc/locale.conf ; \
 		$(MAKE) recreaterepo ; \
 		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root pacman \
 			-Syyu --noconfirm ; \
