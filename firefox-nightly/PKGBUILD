@@ -5,7 +5,7 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r359962.df91ea9
+pkgver=r360110.386b597
 pkgrel=1
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
@@ -31,7 +31,7 @@ source=($_gitroot
         firefox-install-dir.patch
         vendor.js)
 md5sums=('SKIP'
-         '837806785e2f642c512c6454a9141975'
+         '21854d13a2c534506610743e3bd9b993'
          'cdd40dbd691d26365a3d4522b9cb86c6'
          'c164319e8dd09354fd6a8d42b923a16c')
 
