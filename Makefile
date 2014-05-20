@@ -71,7 +71,10 @@ test:
 	@_gitname=$$(grep -R '^_gitname' $(PWD)/$*/PKGBUILD | sed -e 's/_gitname=//' -e "s/'//g" -e 's/"//g') && \
 	cd $* ; \
 	rm -f *$(PKGEXT) *.log ; \
-	sudo $(MAKECHROOTPKG) $(CHROOTPATH64) || exit 1 && \
+	sudo $(MAKECHROOTPKG) $(CHROOTPATH64) ; \
+	if ! ls *.$(PKGEXT) &> /dev/null ; then \
+		exit 1 ; \
+	fi ; \
 	sudo rm -f $(addsuffix *, $(addprefix $(CHROOTPATH64)/root/repo/, $(shell grep -R '^pkgname' $*/PKGBUILD | sed -e 's/pkgname=//' -e 's/(//g' -e 's/)//g' -e "s/'//g" -e 's/"//g'))) ; \
 	sudo cp *.$(PKGEXT) $(CHROOTPATH64)/root/repo/ && \
 	for f in *.$(PKGEXT) ; do \
@@ -133,3 +136,5 @@ chromium-pepper-flash:
 	curl 'https://aur.archlinux.org/packages/ch/$@/$@.tar.gz' | tar xz ; \
 	make $@/built
 
+chromium-pepper-flash-ver:
+	exit 0
