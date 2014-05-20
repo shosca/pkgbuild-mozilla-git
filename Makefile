@@ -74,7 +74,6 @@ test:
 	sudo $(MAKECHROOTPKG) $(CHROOTPATH64) || exit 1 && \
 	sudo rm -f $(addsuffix *, $(addprefix $(CHROOTPATH64)/root/repo/, $(shell grep -R '^pkgname' $*/PKGBUILD | sed -e 's/pkgname=//' -e 's/(//g' -e 's/)//g' -e "s/'//g" -e 's/"//g'))) ; \
 	sudo cp *.$(PKGEXT) $(CHROOTPATH64)/root/repo/ && \
-	cp $(CHROOTPATH64)/$$USER/startdir/PKGBUILD . && \
 	for f in *.$(PKGEXT) ; do \
 		sudo repo-add $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/"$$f" ; \
 	done ; \
@@ -128,3 +127,9 @@ updateshas: $(SHA_TARGETS)
 	@cd $(PWD)/$* && updpkgsums
 
 -include Makefile.mk
+
+chromium-pepper-flash:
+	rm -rf $@ ; \
+	curl 'https://aur.archlinux.org/packages/ch/$@/$@.tar.gz' | tar xz ; \
+	make $@/built
+
