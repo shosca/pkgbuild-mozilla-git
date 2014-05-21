@@ -25,6 +25,7 @@ clean:
 
 reset: clean
 	sudo rm -f */built
+	sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=0/" $(PWD)/**/PKGBUILD ; \
 
 checkchroot:
 	@if [ ! -d $(CHROOTPATH64) ]; then \
@@ -92,7 +93,10 @@ $(DIRS): checkchroot
 	@if [ ! -f $(PWD)/$@/built ]; then \
 		_pkgrel=$$(grep -R '^pkgrel' $(PWD)/$@/PKGBUILD | sed -e 's/pkgrel=//' -e "s/'//g" -e 's/"//g') && \
 		sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=$$(($$_pkgrel+1))/" $(PWD)/$@/PKGBUILD ; \
-		$(MAKE) $@/built ; \
+		if ! $(MAKE) $@/built ; then \
+			sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=$$_pkgrel/" $(PWD)/$@/PKGBUILD ; \
+			exit 1 ; \
+		fi ; \
 	fi
 
 gitpull: $(PULL_TARGETS)
