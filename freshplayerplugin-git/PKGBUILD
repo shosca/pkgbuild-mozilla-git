@@ -3,13 +3,14 @@ _gitroot='git://github.com/i-rinat/freshplayerplugin.git'
 _gitname='freshplayerplugin'
 
 pkgname=freshplayerplugin-git
-pkgver=r484.9b30e58
+pkgver=r490.7f03f42
 pkgrel=1
 pkgdesc="PPAPI-host to NPAPI-plugin adapter"
 arch=('i686' 'x86_64')
 url="https://github.com/i-rinat/freshplayerplugin"
 license=('MIT')
-depends=('pango' 'alsa-lib' 'freetype2' 'uriparser' 'chromium-pepper-flash')
+depends=('pango' 'alsa-lib' 'freetype2' 'uriparser' 'chromium-pepper-flash'
+        'libconfig')
 makedepends=('git' 'cmake')
 provides=('freshplayerplugin')
 conflicts=('freshplayerplugin')

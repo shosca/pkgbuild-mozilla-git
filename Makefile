@@ -47,6 +47,9 @@ checkchroot:
 			-Syyu --noconfirm ; \
 		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root \
 			/bin/bash -c 'yes | pacman -S gcc-multilib gcc-libs-multilib p7zip' ; \
+	else \
+		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root \
+			/bin/bash -c 'yes | pacman -Syu' ; \
 	fi
 
 resetchroot:
