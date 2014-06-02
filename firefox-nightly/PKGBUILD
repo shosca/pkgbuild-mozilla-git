@@ -6,7 +6,7 @@ _gitname="gecko-dev"
 
 pkgname=firefox-nightly
 pkgver=r363262.3e5340d
-pkgrel=1
+pkgrel=2
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
