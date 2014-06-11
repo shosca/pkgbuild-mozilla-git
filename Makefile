@@ -24,7 +24,7 @@ clean:
 	sudo rm -rf */*.log */pkg */src */logpipe*
 
 reset: clean
-	sudo rm -f */built
+	sudo rm -f */built ; \
 	sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=0/" $(PWD)/**/PKGBUILD ; \
 
 checkchroot:
@@ -43,10 +43,8 @@ checkchroot:
 		echo 'LANG="en_US.UTF-8"' | sudo tee -a $(CHROOTPATH64)/root/etc/locale.conf ; \
 		echo 'LANGUAGE="en_US:en"' | sudo tee -a $(CHROOTPATH64)/root/etc/locale.conf ; \
 		$(MAKE) recreaterepo ; \
-		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root pacman \
-			-Syyu --noconfirm ; \
-		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root \
-			/bin/bash -c 'yes | pacman -S gcc-multilib gcc-libs-multilib p7zip' ; \
+		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root pacman -Syyu --noconfirm ; \
+		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root /bin/bash -c 'yes | pacman -S gcc-multilib gcc-libs-multilib p7zip' ; \
 	else \
 		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root pacman -Syyu --noconfirm ; \
 	fi
@@ -78,17 +76,13 @@ test:
 	if ! ls *.$(PKGEXT) &> /dev/null ; then \
 		exit 1 ; \
 	fi ; \
-	sudo rm -f $(addsuffix *, $(addprefix $(CHROOTPATH64)/root/repo/, $(shell grep -R '^pkgname' $*/PKGBUILD | sed -e 's/pkgname=//' -e 's/(//g' -e 's/)//g' -e "s/'//g" -e 's/"//g'))) ; \
-	sudo cp *.$(PKGEXT) $(CHROOTPATH64)/root/repo/ && \
-	for f in *.$(PKGEXT) ; do \
-		sudo repo-add $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/"$$f" ; \
-	done ; \
 	if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
 		cd $(PWD)/$*/$$_gitname ; git log -1 | head -n1 > $(PWD)/$*/built ; \
 	else \
 		touch $(PWD)/$*/built ; \
 	fi ; \
 	cd $(PWD) ; \
+	$(MAKE) recreaterepo ; \
 	rm -f $(addsuffix /built, $(shell grep ' $*' Makefile | cut -d':' -f1)) ; \
 
 $(DIRS): checkchroot
