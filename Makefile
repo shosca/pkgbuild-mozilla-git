@@ -71,11 +71,14 @@ test:
 %/built:
 	@_gitname=$$(grep -R '^_gitname' $(PWD)/$*/PKGBUILD | sed -e 's/_gitname=//' -e "s/'//g" -e 's/"//g') && \
 	cd $* ; \
-	rm -f *$(PKGEXT) *.log ; \
+	rm -f *.log ; \
+	mkdir -p tmp ; mv *$(PKGEXT) tmp ; \
 	sudo $(MAKECHROOTPKG) $(CHROOTPATH64) ; \
 	if ! ls *.$(PKGEXT) &> /dev/null ; then \
+		mv tmp/*.$(PKGEXT) . && rm -rf tmp ; \
 		exit 1 ; \
 	fi ; \
+	rm -rf tmp ; \
 	if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
 		cd $(PWD)/$*/$$_gitname ; git log -1 | head -n1 > $(PWD)/$*/built ; \
 	else \
