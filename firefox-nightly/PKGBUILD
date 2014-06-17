@@ -5,7 +5,7 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r366060.a3c4c53
+pkgver=r366162.82463f1
 pkgrel=1
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
