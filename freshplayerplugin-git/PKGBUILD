@@ -3,7 +3,7 @@ _gitroot='git://github.com/i-rinat/freshplayerplugin.git'
 _gitname='freshplayerplugin'
 
 pkgname=freshplayerplugin-git
-pkgver=r559.a400c5e
+pkgver=r563.8b5b496
 pkgrel=1
 pkgdesc="PPAPI-host to NPAPI-plugin adapter"
 arch=('i686' 'x86_64')
