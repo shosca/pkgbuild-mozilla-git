@@ -5,8 +5,8 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r368340.3ac6e87
-pkgrel=1
+pkgver=r368664.543133a
+pkgrel=2
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -29,11 +29,13 @@ options=(!emptydirs !makeflags)
 source=($_gitroot
         firefox-nightly.desktop
         firefox-install-dir.patch
-        vendor.js)
+        vendor.js
+        cairo-build-fix.patch)
 md5sums=('SKIP'
          '21854d13a2c534506610743e3bd9b993'
          'cdd40dbd691d26365a3d4522b9cb86c6'
-         'c164319e8dd09354fd6a8d42b923a16c')
+         'c164319e8dd09354fd6a8d42b923a16c'
+         '0119f18e74b19a4fafc729844246d334')
 
 # Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
 # Note: These are for Arch Linux use ONLY. For your own distribution, please
@@ -93,6 +95,7 @@ EOF
   echo "ac_add_options --with-google-api-keyfile=\"$PWD/google-api-key\"" >>.mozconfig
 
   patch -Np1 -i ../firefox-install-dir.patch
+  patch -Np1 -i ../cairo-build-fix.patch
 
   # Name it nightly
   sed -i '/^MOZ_APP_BASENAME=/s/Firefox/Firefox-Nightly/' \
