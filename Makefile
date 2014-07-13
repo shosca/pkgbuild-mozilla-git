@@ -55,6 +55,7 @@ recreaterepo:
 	@echo "Recreating working repo $(REPO)" ; \
 	if ls */*.$(PKGEXT) &> /dev/null ; then \
 		sudo cp -f */*.$(PKGEXT) $(CHROOTPATH64)/root/repo ; \
+		sudo cp -f */*.$(PKGEXT) /var/cache/pacman/pkg ; \
 		sudo repo-add $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/*.$(PKGEXT) ; \
 	fi ; \
 	sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root pacman -Syyu --noconfirm ; \
