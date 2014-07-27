@@ -5,7 +5,7 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r372822.1ade060
+pkgver=r372919.87f704d
 pkgrel=1
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
@@ -84,6 +84,7 @@ ac_add_options --enable-pulseaudio
 ac_add_options --disable-crashreporter
 ac_add_options --disable-updater
 ac_add_options --disable-installer
+ac_add_options --disable-tests
 
 # PGO
 #mk_add_options PROFILE_GEN_SCRIPT='EXTRA_TEST_ARGS=10 \$(MAKE) -C \$(MOZ_OBJDIR) pgo-profile-run'
