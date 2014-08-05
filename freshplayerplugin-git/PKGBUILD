@@ -3,7 +3,7 @@ _gitroot='git://github.com/i-rinat/freshplayerplugin.git'
 _gitname='freshplayerplugin'
 
 pkgname=freshplayerplugin-git
-pkgver=r710.9ce77fa
+pkgver=r717.8549c4e
 pkgrel=1
 pkgdesc="PPAPI-host to NPAPI-plugin adapter"
 arch=('i686' 'x86_64')
@@ -32,7 +32,6 @@ build() {
 package() {
   cd "${srcdir}/${_gitname}"
   install -d "$pkgdir/usr/lib/mozilla/plugins"
-  install -Dm644 libfreshwrapper-nacl.so "$pkgdir/usr/lib/mozilla/plugins"
   install -Dm644 libfreshwrapper-pepperflash.so "$pkgdir/usr/lib/mozilla/plugins"
 }
 
