@@ -6,7 +6,7 @@ _gitname="gecko-dev"
 
 pkgname=firefox-nightly
 pkgver=r375249.2882d4f
-pkgrel=2
+pkgrel=3
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -73,7 +73,7 @@ ac_add_options --enable-system-cairo
 ac_add_options --enable-system-pixman
 ac_add_options --enable-system-hunspell
 
-ac_add_options --enable-default-toolkit=cairo-gtk3
+#ac_add_options --enable-default-toolkit=cairo-gtk3
 
 # Features
 ac_add_options --enable-startup-notification
@@ -129,13 +129,13 @@ build() {
   export PYTHON="/usr/bin/python2"
   unset CPPFLAGS
 
-  LD_PRELOAD=/usr/lib/libgtk-3.so make -f client.mk build
+  make -f client.mk build
 }
 
 package() {
   cd ${srcdir}/${_gitname}
 
-  LD_PRELOAD=/usr/lib/libgtk-3.so make -f client.mk DESTDIR="$pkgdir" INSTALL_SDK= install
+  make -f client.mk DESTDIR="$pkgdir" INSTALL_SDK= install
 
   install -Dm644 ../vendor.js "$pkgdir/usr/lib/firefox-nightly/browser/defaults/preferences/vendor.js"
 
