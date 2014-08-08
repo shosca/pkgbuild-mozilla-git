@@ -5,8 +5,8 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r374406.c60b44a
-pkgrel=1
+pkgver=r375249.2882d4f
+pkgrel=2
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -115,6 +115,10 @@ EOF
 
   # Use gold, as Mozilla can use some of its features, such as safe ICF
   ln -s /usr/bin/ld.gold "$srcdir/path/ld"
+
+  # configure script misdetects the preprocessor without an optimization level
+  # https://bugs.archlinux.org/task/34644
+  sed -i '/ac_cpp=/s/$CPPFLAGS/& -O2/' configure.in
 }
 
 build() {
@@ -125,12 +129,13 @@ build() {
   export PYTHON="/usr/bin/python2"
   unset CPPFLAGS
 
-  make -f client.mk build
+  LD_PRELOAD=/usr/lib/libgtk-3.so make -f client.mk build
 }
 
 package() {
   cd ${srcdir}/${_gitname}
-  make -f client.mk DESTDIR="$pkgdir" install
+
+  LD_PRELOAD=/usr/lib/libgtk-3.so make -f client.mk DESTDIR="$pkgdir" INSTALL_SDK= install
 
   install -Dm644 ../vendor.js "$pkgdir/usr/lib/firefox-nightly/browser/defaults/preferences/vendor.js"
 
@@ -154,7 +159,7 @@ package() {
   ln -s /usr/share/hyphen "$pkgdir/usr/lib/firefox-nightly/hyphenation"
 
   # We don't want the development stuff
-  rm -r "$pkgdir"/usr/{include,lib/firefox-nightly-devel,share/idl}
+  rm -rf "$pkgdir"/usr/{include,lib/firefox-nightly-devel,share/idl}
 
   #workaround for now
   #https://bugzilla.mozilla.org/show_bug.cgi?id=658850

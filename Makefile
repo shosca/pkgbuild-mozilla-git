@@ -135,10 +135,3 @@ updateshas: $(SHA_TARGETS)
 
 -include Makefile.mk
 
-chromium-pepper-flash:
-	rm -rf $@ ; \
-	curl 'https://aur.archlinux.org/packages/ch/$@/$@.tar.gz' | tar xz ; \
-	make $@/built
-
-chromium-pepper-flash-ver:
-	exit 0
