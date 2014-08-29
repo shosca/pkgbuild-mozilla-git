@@ -5,7 +5,7 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r378987.3bf1a97
+pkgver=r379365.13c41fb
 pkgrel=1
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
@@ -13,7 +13,7 @@ license=(MPL GPL LGPL)
 url="http://www.mozilla.com/en-US/firefox/channel/"
 depends=('gtk2' 'gtk3' 'mozilla-common' 'libxt' 'startup-notification' 'mime-types'
          'dbus-glib' 'alsa-lib' 'desktop-file-utils' 'hicolor-icon-theme'
-         'libvpx' 'libevent' 'nss' 'hunspell' 'sqlite')
+         'libvpx' 'libevent' 'libpng' 'nss' 'hunspell' 'sqlite')
 makedepends=('git' 'autoconf2.13' 'unzip' 'zip' 'diffutils' 'python2' 'yasm' 'mesa' 'imake'
              'xorg-server-xvfb' 'libpulse' 'gstreamer0.10-base'
              'inetutils')
@@ -62,8 +62,8 @@ ac_add_options --with-system-jpeg
 ac_add_options --with-system-zlib
 ac_add_options --with-system-bz2
 ac_add_options --with-system-png
-#ac_add_options --with-system-libevent
-#ac_add_options --with-system-libvpx
+ac_add_options --with-system-libevent
+ac_add_options --with-system-libvpx
 
 ac_add_options --enable-skia
 ac_add_options --enable-jemalloc
@@ -134,6 +134,11 @@ build() {
 
 package() {
   cd ${srcdir}/${_gitname}
+
+  export PATH="$srcdir/path:$PATH"
+  export LDFLAGS="-Wl,-rpath,/usr/lib/firefox-nightly -Wl,-O1,--sort-common,--hash-style=gnu,--as-needed"
+  export PYTHON="/usr/bin/python2"
+  unset CPPFLAGS
 
   make -f client.mk DESTDIR="$pkgdir" INSTALL_SDK= install
 
