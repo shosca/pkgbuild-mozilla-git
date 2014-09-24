@@ -105,10 +105,12 @@ gitpull: $(PULL_TARGETS)
 	@_gitroot=$$(grep -R '^_gitroot' $(PWD)/$*/PKGBUILD | sed -e 's/_gitroot=//' -e "s/'//g" -e 's/"//g') && \
 	_gitname=$$(grep -R '^_gitname' $(PWD)/$*/PKGBUILD | sed -e 's/_gitname=//' -e "s/'//g" -e 's/"//g') && \
 	echo "Pulling $*" ; \
+	for f in $(PWD)/$*/*/HEAD; do \
+		cd $$(dirname $$f) && $(GITFETCH) ; \
+	done ; \
 	if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
 		echo "Updating $$_gitname" ; \
 		cd $(PWD)/$*/$$_gitname && \
-		$(GITFETCH) && \
 		if [ -f $(PWD)/$*/built ] && [ "$$(cat $(PWD)/$*/built)" != "$$(git log -1 | head -n1)" ]; then \
 			rm -f $(PWD)/$*/built ; \
 			_newpkgver="r$$(git --git-dir=$(PWD)/$*/$$_gitname rev-list --count HEAD).$$(git --git-dir=$(PWD)/$*/$$_gitname rev-parse --short HEAD)" ; \
