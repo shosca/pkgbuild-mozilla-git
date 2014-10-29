@@ -21,7 +21,7 @@ all:
 	$(MAKE) build
 
 clean:
-	sudo rm -rf */*.log */pkg */src */logpipe*
+	sudo rm -rf */*.log */pkg */src */logpipe* $(CHROOTPATH64)
 
 reset: clean
 	sudo rm -f */built ; \
