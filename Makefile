@@ -3,11 +3,11 @@ PWD=$(shell pwd)
 DIRS=$(shell ls -d */ | sed -e 's/\///' )
 ARCHNSPAWN=arch-nspawn
 MKARCHROOT=/usr/bin/mkarchroot -C /usr/share/devtools/pacman-multilib.conf
-MAKECHROOTPKG=/usr/bin/makechrootpkg -c -u -r
 PKGEXT=pkg.tar.xz
 GITFETCH=git fetch --all -p
 GITCLONE=git clone --mirror
 CHROOTPATH64=/var/chroot64/$(REPO)
+MAKECHROOTPKG=/usr/bin/makechrootpkg -c -u -r $(CHROOTPATH64)
 
 TARGETS=$(addsuffix /built, $(DIRS))
 PULL_TARGETS=$(addsuffix -pull, $(DIRS))
@@ -74,7 +74,7 @@ test:
 	cd $* ; \
 	rm -f *.log ; \
 	mkdir -p tmp ; mv *$(PKGEXT) tmp ; \
-	sudo $(MAKECHROOTPKG) $(CHROOTPATH64) ; \
+	sudo $(MAKECHROOTPKG) -l $* ; \
 	if ! ls *.$(PKGEXT) &> /dev/null ; then \
 		mv tmp/*.$(PKGEXT) . && rm -rf tmp ; \
 		exit 1 ; \
