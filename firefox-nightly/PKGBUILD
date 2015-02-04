@@ -5,14 +5,14 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r404610.769dd38
+pkgver=r404804.54f71a0
 pkgrel=1
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
 url="http://www.mozilla.com/en-US/firefox/channel/"
 depends=('gtk2' 'gtk3' 'mozilla-common' 'libxt' 'startup-notification' 'mime-types'
-         'dbus-glib' 'alsa-lib' 'desktop-file-utils' 'hicolor-icon-theme'
+         'dbus-glib' 'alsa-lib' 'desktop-file-utils' 'hicolor-icon-theme' 'icu'
          'libvpx' 'libevent' 'libpng' 'nss' 'hunspell' 'sqlite')
 makedepends=('git' 'autoconf2.13' 'unzip' 'zip' 'diffutils' 'python2' 'yasm' 'mesa' 'imake'
              'xorg-server-xvfb' 'libpulse' 'gstreamer0.10-base'
@@ -56,38 +56,46 @@ ac_add_options --libdir=/usr/lib
 ac_add_options --with-branding=browser/branding/nightly
 
 # system libraries
+ac_add_options --with-pthreads
+ac_add_options --with-system-bz2
+ac_add_options --with-system-icu
+ac_add_options --with-system-libvpx
+ac_add_options --with-system-zlib
+#ac_add_options --with-system-jpeg
+#ac_add_options --with-system-libevent
 #ac_add_options --with-system-nspr
 #ac_add_options --with-system-nss
-#ac_add_options --with-system-jpeg
-#ac_add_options --with-system-zlib
-#ac_add_options --with-system-bz2
 #ac_add_options --with-system-png
-#ac_add_options --with-system-libevent
-#ac_add_options --with-system-libvpx
 
-ac_add_options --enable-skia
-ac_add_options --enable-jemalloc
-#ac_add_options --enable-system-sqlite
-ac_add_options --enable-system-ffi
-ac_add_options --enable-system-cairo
-ac_add_options --enable-system-pixman
-ac_add_options --enable-system-hunspell
-
-#ac_add_options --enable-default-toolkit=cairo-gtk3
-
-# Features
-ac_add_options --enable-startup-notification
+ac_add_options --enable-canvas
+ac_add_options --enable-chrome-format=omni
+ac_add_options --enable-extensions=default
+ac_add_options --enable-gio
 ac_add_options --enable-gstreamer
+ac_add_options --enable-libnotify
+ac_add_options --enable-necko-wifi
+ac_add_options --enable-pango
 ac_add_options --enable-pulseaudio
-#ac_add_options --enable-dmd
+ac_add_options --enable-startup-notification
+ac_add_options --enable-system-cairo
+ac_add_options --enable-system-ffi
+ac_add_options --enable-system-hunspell
+ac_add_options --enable-system-pixman
+
+ac_add_options --enable-default-toolkit=cairo-gtk3
 
 ac_add_options --disable-crashreporter
-ac_add_options --disable-updater
+ac_add_options --disable-gnomevfs
 ac_add_options --disable-installer
+ac_add_options --disable-javaxpcom
+ac_add_options --disable-mochitest
 ac_add_options --disable-tests
+ac_add_options --disable-updater
+ac_add_options --disable-xprint
 
 # PGO
 #mk_add_options PROFILE_GEN_SCRIPT='EXTRA_TEST_ARGS=10 \$(MAKE) -C \$(MOZ_OBJDIR) pgo-profile-run'
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/objdir
 EOF
 
   echo -n "$_google_api_key" > google-api-key
@@ -125,18 +133,20 @@ build() {
   cd ${srcdir}/${_gitname}
 
   export PATH="$srcdir/path:$PATH"
-  export LDFLAGS="-Wl,-rpath,/usr/lib/firefox-nightly -Wl,-O1,--sort-common,--hash-style=gnu,--as-needed"
+  #export LDFLAGS="-Wl,-rpath,/usr/lib/firefox-nightly -Wl,-O1,--sort-common,--hash-style=gnu,--as-needed"
+  export LDFLAGS=
   export PYTHON="/usr/bin/python2"
   unset CPPFLAGS
 
-  make -f client.mk build
+  make -f client.mk build MOZ_SERVICES_SYNC=1
 }
 
 package() {
   cd ${srcdir}/${_gitname}
 
   export PATH="$srcdir/path:$PATH"
-  export LDFLAGS="-Wl,-rpath,/usr/lib/firefox-nightly -Wl,-O1,--sort-common,--hash-style=gnu,--as-needed"
+  #export LDFLAGS="-Wl,-rpath,/usr/lib/firefox-nightly -Wl,-O1,--sort-common,--hash-style=gnu,--as-needed"
+  export LDFLAGS=
   export PYTHON="/usr/bin/python2"
   unset CPPFLAGS
 
