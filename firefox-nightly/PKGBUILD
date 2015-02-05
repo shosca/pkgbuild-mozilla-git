@@ -5,7 +5,7 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r404804.54f71a0
+pkgver=r405061.0562d10
 pkgrel=1
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
@@ -111,10 +111,6 @@ EOF
   sed -i 's/%APP%/firefox/g' \
     browser/app/profile/firefox.js
 
-  # Fix PRE_RELEASE_SUFFIX
-  #sed -i '/^PRE_RELEASE_SUFFIX := ""/s/ ""//' \
-    #browser/base/Makefile.in
-
   rm -rf "$srcdir/path"
   mkdir "$srcdir/path"
 
@@ -133,7 +129,6 @@ build() {
   cd ${srcdir}/${_gitname}
 
   export PATH="$srcdir/path:$PATH"
-  #export LDFLAGS="-Wl,-rpath,/usr/lib/firefox-nightly -Wl,-O1,--sort-common,--hash-style=gnu,--as-needed"
   export LDFLAGS=
   export PYTHON="/usr/bin/python2"
   unset CPPFLAGS
@@ -145,10 +140,7 @@ package() {
   cd ${srcdir}/${_gitname}
 
   export PATH="$srcdir/path:$PATH"
-  #export LDFLAGS="-Wl,-rpath,/usr/lib/firefox-nightly -Wl,-O1,--sort-common,--hash-style=gnu,--as-needed"
-  export LDFLAGS=
   export PYTHON="/usr/bin/python2"
-  unset CPPFLAGS
 
   make -f client.mk DESTDIR="$pkgdir" INSTALL_SDK= install
 
@@ -169,7 +161,7 @@ package() {
     "$pkgdir/usr/share/applications/firefox-nightly.desktop"
 
   # Use system-provided dictionaries
-  rm -rf "$pkgdir"/usr/lib/nightly/{dictionaries,hyphenation}
+  rm -rf "$pkgdir"/usr/lib/firefox-nightly/{dictionaries,hyphenation}
   ln -s /usr/share/hunspell "$pkgdir/usr/lib/firefox-nightly/dictionaries"
   ln -s /usr/share/hyphen "$pkgdir/usr/lib/firefox-nightly/hyphenation"
 
