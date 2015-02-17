@@ -6,7 +6,7 @@ _gitname="gecko-dev"
 
 pkgname=firefox-nightly
 pkgver=r406812.fafc282
-pkgrel=1
+pkgrel=2
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -84,7 +84,7 @@ ac_add_options --enable-system-pixman
 
 ac_add_options --enable-default-toolkit=cairo-gtk3
 
-ac_add_options --disable-crashreporter
+#ac_add_options --disable-crashreporter
 ac_add_options --disable-gnomevfs
 ac_add_options --disable-installer
 ac_add_options --disable-javaxpcom
