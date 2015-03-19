@@ -5,7 +5,7 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r411535.0503c0d
+pkgver=r411870.efb4af1
 pkgrel=1
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
@@ -82,7 +82,7 @@ ac_add_options --enable-system-ffi
 ac_add_options --enable-system-hunspell
 ac_add_options --enable-system-pixman
 
-ac_add_options --enable-default-toolkit=cairo-gtk3
+#ac_add_options --enable-default-toolkit=cairo-gtk3
 
 ac_add_options --disable-crashreporter
 ac_add_options --disable-gnomevfs
