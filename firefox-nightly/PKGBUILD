@@ -5,14 +5,14 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r415215.dc4ba8b
+pkgver=r415876.ce515b4
 pkgrel=1
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
 url="http://www.mozilla.com/en-US/firefox/channel/"
 depends=('gtk2' 'gtk3' 'mozilla-common' 'libxt' 'startup-notification' 'mime-types'
-         'dbus-glib' 'alsa-lib' 'desktop-file-utils' 'hicolor-icon-theme' 'icu'
+         'dbus-glib' 'alsa-lib' 'desktop-file-utils' 'hicolor-icon-theme'
          'libvpx' 'libevent' 'libpng' 'nss' 'hunspell' 'sqlite')
 makedepends=('git' 'autoconf2.13' 'unzip' 'zip' 'diffutils' 'python2' 'yasm' 'mesa' 'imake'
              'xorg-server-xvfb' 'libpulse' 'gstreamer0.10-base'
@@ -58,7 +58,7 @@ ac_add_options --with-branding=browser/branding/nightly
 # system libraries
 ac_add_options --with-pthreads
 ac_add_options --with-system-bz2
-ac_add_options --with-system-icu
+#ac_add_options --with-system-icu
 ac_add_options --with-system-libvpx
 ac_add_options --with-system-zlib
 #ac_add_options --with-system-jpeg
