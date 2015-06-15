@@ -5,7 +5,7 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r421480.1f2445b
+pkgver=r423519.566bd6c
 pkgrel=1
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
@@ -13,7 +13,7 @@ license=(MPL GPL LGPL)
 url="http://www.mozilla.com/en-US/firefox/channel/"
 depends=('gtk2' 'gtk3' 'mozilla-common' 'libxt' 'startup-notification' 'mime-types'
          'dbus-glib' 'alsa-lib' 'desktop-file-utils' 'hicolor-icon-theme'
-         'libvpx' 'libevent' 'libpng' 'nss' 'hunspell' 'sqlite')
+         'libvpx' 'libevent' 'libpng' 'nss' 'hunspell' 'sqlite' 'gconf')
 makedepends=('git' 'autoconf2.13' 'unzip' 'zip' 'diffutils' 'python2' 'yasm' 'mesa' 'imake'
              'xorg-server-xvfb' 'libpulse' 'gstreamer0.10-base'
              'inetutils')
