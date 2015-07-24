@@ -61,7 +61,7 @@ ac_add_options --with-system-bz2
 #ac_add_options --with-system-icu
 ac_add_options --with-system-libvpx
 ac_add_options --with-system-zlib
-#ac_add_options --with-system-jpeg
+ac_add_options --with-system-jpeg
 #ac_add_options --with-system-libevent
 #ac_add_options --with-system-nspr
 #ac_add_options --with-system-nss
@@ -77,10 +77,12 @@ ac_add_options --enable-necko-wifi
 ac_add_options --enable-pango
 ac_add_options --enable-pulseaudio
 ac_add_options --enable-startup-notification
-#ac_add_options --enable-system-cairo
+ac_add_options --enable-system-cairo
 ac_add_options --enable-system-ffi
 ac_add_options --enable-system-hunspell
 ac_add_options --enable-system-pixman
+
+ac_add_options --enable-default-toolkit=cairo-gtk3
 
 ac_add_options --disable-crashreporter
 ac_add_options --disable-gnomevfs
