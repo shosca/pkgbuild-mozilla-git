@@ -97,7 +97,8 @@ $(DIRS): checkchroot
 			sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=$$_pkgrel/" $(PWD)/$@/PKGBUILD ; \
 			exit 1 ; \
 		fi ; \
-	fi
+	fi ; \
+	sudo rm -rf $(CHROOTPATH64)/$@
 
 gitpull: $(PULL_TARGETS)
 
