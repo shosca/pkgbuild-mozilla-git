@@ -114,9 +114,8 @@ gitpull: $(PULL_TARGETS)
 		cd $(PWD)/$*/$$_gitname && \
 		if [ -f $(PWD)/$*/built ] && [ "$$(cat $(PWD)/$*/built)" != "$$(git log -1 | head -n1)" ]; then \
 			rm -f $(PWD)/$*/built ; \
-			_newpkgver="r$$(git --git-dir=$(PWD)/$*/$$_gitname rev-list --count HEAD).$$(git --git-dir=$(PWD)/$*/$$_gitname rev-parse --short HEAD)" ; \
-			sed --follow-symlinks -i "s/^pkgver=[^ ]*/pkgver=$$_newpkgver/" $(PWD)/$*/PKGBUILD ; \
-			sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=0/" $(PWD)/$*/PKGBUILD ; \
+			$(MAKE) -C $(PWD) $*-ver ; \
+			$(MAKE) -C $(PWD) $*-rel ; \
 		fi ; \
 		cd $(PWD) ; \
 	fi
@@ -124,12 +123,13 @@ gitpull: $(PULL_TARGETS)
 vers: $(VER_TARGETS)
 
 %-ver:
-	@_gitname=$$(grep -R '^_gitname' $(PWD)/$*/PKGBUILD | sed -e 's/_gitname=//' -e "s/'//g" -e 's/"//g') && \
-	if [ -d $(PWD)/$*/$$_gitname ]; then \
-		_newpkgver="r$$(git --git-dir=$(PWD)/$*/$$_gitname rev-list --count HEAD).$$(git --git-dir=$(PWD)/$*/$$_gitname rev-parse --short HEAD)" ; \
-		sed --follow-symlinks -i "s/^pkgver=[^ ]*/pkgver=$$_newpkgver/" $(PWD)/$*/PKGBUILD ; \
-		echo "$* r$$(git --git-dir=$(PWD)/$*/$$_gitname rev-list --count HEAD).$$(git --git-dir=$(PWD)/$*/$$_gitname rev-parse --short HEAD)" ; \
-	fi
+	@cd $(PWD)/$* ; \
+	_newpkgver=$$(bash -c "source PKGBUILD ; export srcdir=$$(pwd) ; pkgver") ; \
+	sed --follow-symlinks -i "s/^pkgver=[^ ]*/pkgver=$$_newpkgver/" PKGBUILD ; \
+	echo "$*: $$_newpkgver"
+
+%-rel:
+	@sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=0/" $(PWD)/$*/PKGBUILD ; \
 
 updateshas: $(SHA_TARGETS)
 
