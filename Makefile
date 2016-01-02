@@ -4,7 +4,7 @@ DIRS=$(shell ls -d */ | sed -e 's/\///' )
 ARCHNSPAWN=arch-nspawn
 MKARCHROOT=/usr/bin/mkarchroot -C /usr/share/devtools/pacman-multilib.conf
 PKGEXT=pkg.tar.xz
-GITFETCH=git fetch --all -p
+GITFETCH=git fetch --all -p -q
 GITCLONE=git clone --mirror
 CHROOTPATH64=/var/chroot64/$(REPO)
 MAKECHROOTPKG=/usr/bin/makechrootpkg -c -u -r $(CHROOTPATH64)
@@ -105,17 +105,15 @@ gitpull: $(PULL_TARGETS)
 %-pull:
 	@_gitroot=$$(grep -R '^_gitroot' $(PWD)/$*/PKGBUILD | sed -e 's/_gitroot=//' -e "s/'//g" -e 's/"//g') && \
 	_gitname=$$(grep -R '^_gitname' $(PWD)/$*/PKGBUILD | sed -e 's/_gitname=//' -e "s/'//g" -e 's/"//g') && \
-	echo "Pulling $*" ; \
 	for f in $(PWD)/$*/*/HEAD; do \
 		cd $$(dirname $$f) && $(GITFETCH) ; \
 	done ; \
 	if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
-		echo "Updating $$_gitname" ; \
 		cd $(PWD)/$*/$$_gitname && \
 		if [ -f $(PWD)/$*/built ] && [ "$$(cat $(PWD)/$*/built)" != "$$(git log -1 | head -n1)" ]; then \
 			rm -f $(PWD)/$*/built ; \
-			$(MAKE) -C $(PWD) $*-ver ; \
-			$(MAKE) -C $(PWD) $*-rel ; \
+			$(MAKE) -s -C $(PWD) $*-ver ; \
+			$(MAKE) -s -C $(PWD) $*-rel ; \
 		fi ; \
 		cd $(PWD) ; \
 	fi
