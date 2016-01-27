@@ -5,7 +5,7 @@ _gitroot="git://github.com/mozilla/gecko-dev"
 _gitname="gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r458002.6d5ed63
+pkgver=r458726.191124b
 pkgrel=1
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
@@ -59,7 +59,7 @@ ac_add_options --with-branding=browser/branding/nightly
 ac_add_options --with-pthreads
 ac_add_options --with-system-bz2
 #ac_add_options --with-system-icu
-ac_add_options --with-system-libvpx
+#ac_add_options --with-system-libvpx
 ac_add_options --with-system-zlib
 ac_add_options --with-system-jpeg
 #ac_add_options --with-system-libevent
