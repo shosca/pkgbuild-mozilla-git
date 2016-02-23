@@ -2,11 +2,11 @@
 # Maintainer: Jan Alexander Steffens (heftig) <jan.steffens@gmail.com>
 
 _gitroot="git://github.com/mozilla/gecko-dev"
-_gitname="gecko-dev"
+_gitname="repo-gecko-dev"
 
 pkgname=firefox-nightly
-pkgver=r461434.d05085d
-pkgrel=1
+pkgver=47.0a1.r462551.g135864f
+pkgrel=2
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -26,7 +26,7 @@ optdepends=('networkmanager: Location detection via available WiFi networks'
             'libpulse: PulseAudio audio driver')
 install=firefox-nightly.install
 options=(!emptydirs !makeflags)
-source=($_gitroot
+source=($_gitname::$_gitroot
         firefox-nightly.desktop
         firefox-install-dir.patch
         vendor.js)
@@ -43,7 +43,10 @@ _google_api_key=AIzaSyDwr302FpOSkGRpLlUpPThNTDPbXcIn_FM
 
 pkgver() {
   cd "$srcdir/$_gitname"
-  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  printf "%s.r%s.g%s" \
+    "$(git show HEAD:browser/config/version.txt)" \
+    "$(git rev-list --count HEAD)" \
+    "$(git rev-parse --short HEAD)"
 }
 
 prepare() {
