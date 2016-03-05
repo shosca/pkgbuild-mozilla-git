@@ -10,5 +10,4 @@
 *.html
 
 Makefile.mk
-*/gecko-dev
-*/freshplayerplugin
+*/repo-*
