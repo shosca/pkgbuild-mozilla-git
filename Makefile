@@ -8,7 +8,7 @@ GITFETCH=git remote update --prune
 GITCLONE=git clone --mirror
 CHROOTPATH64=/var/chroot64/$(REPO)
 MAKECHROOTPKG=OPTIND="--holdver --nocolor --noprogressbar" /usr/bin/makechrootpkg -c -u -r $(CHROOTPATH64)
-LOCKFILE=$(CHROOTPATH64)/sync.lock
+LOCKFILE=/tmp/$(REPO)-sync.lock
 PACMAN=pacman -q
 REPOADD=repo-add -n --nocolor -R
 
@@ -33,16 +33,12 @@ reset: clean
 checkchroot: emptyrepo recreaterepo syncrepos
 
 buildchroot:
-	@if [ ! -d $(CHROOTPATH64) ]; then \
-		if [[ -f $(LOCKFILE) ]]; then \
-			while [[ -f $(LOCKFILE) ]]; do sleep 3; done \
-		else \
-			echo "Creating working chroot at $(CHROOTPATH64)/root" ; \
-			sudo mkdir -p $(CHROOTPATH64) ;\
-			[[ ! -f $(CHROOTPATH64)/root/.arch-chroot ]] && sudo $(MKARCHROOT) $(CHROOTPATH64)/root base-devel ; \
-			$(MAKE) installdeps ; \
-		fi ; \
+	@sudo mkdir -p $(CHROOTPATH64) ;\
+	if [[ ! -f $(CHROOTPATH64)/root/.arch-chroot ]]; then \
+		flock $(LOCKFILE) sudo $(MKARCHROOT) $(CHROOTPATH64)/root base-devel ; \
+		$(MAKE) installdeps ; \
 	fi ; \
+	sudo mkdir -p $(CHROOTPATH64)/root/repo ;\
 
 configchroot: buildchroot emptyrepo
 	@sudo cp $(PWD)/pacman.conf $(CHROOTPATH64)/root/etc/pacman.conf ;\
@@ -50,39 +46,28 @@ configchroot: buildchroot emptyrepo
 	sudo cp $(PWD)/locale.conf $(CHROOTPATH64)/root/etc/locale.conf ;\
 
 emptyrepo: buildchroot
-	@sudo rm -rf $(CHROOTPATH64)/root/repo ;\
-	sudo mkdir -p $(CHROOTPATH64)/root/repo/ ; \
-	sudo bsdtar -czf $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz -T /dev/null ; \
-	sudo ln -sf $(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/$(REPO).db ; \
+	@if [[ ! -f $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz ]]; then \
+		flock $(LOCKFILE) sudo bsdtar -czf $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz -T /dev/null ; \
+		sudo ln -sf $(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/$(REPO).db ; \
+	fi ; \
 
-installdeps: buildchroot syncrepos
-	@sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root /bin/bash -c '$(PACMAN) -Sy ; yes | $(PACMAN) -S gcc-multilib gcc-libs-multilib p7zip' ; \
+installdeps: buildchroot emptyrepo
+	flock $(LOCKFILE) sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root /bin/bash -c '$(PACMAN) -Sy ; yes | $(PACMAN) -S gcc-multilib gcc-libs-multilib p7zip'
 
 recreaterepo: buildchroot emptyrepo
 	@echo "Recreating working repo $(REPO)" ; \
-	if [[ -f $(LOCKFILE) ]]; then \
-		while [[ -f $(LOCKFILE) ]]; do sleep 3; done \
-	fi ; \
-	sudo touch $(LOCKFILE) ; \
-	sudo mkdir -p $(CHROOTPATH64)/root/repo ;\
 	sudo cp $(PWD)/pacman.conf $(CHROOTPATH64)/root/etc/pacman.conf ;\
 	if ls */*.$(PKGEXT) &> /dev/null ; then \
-		sudo cp -f */*.$(PKGEXT) $(CHROOTPATH64)/root/repo ; \
-		sudo cp -f */*.$(PKGEXT) /var/cache/pacman/pkg ; \
-		sudo $(REPOADD) $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/*.$(PKGEXT) ; \
-	fi ; \
-	sudo rm $(LOCKFILE) ; \
+		flock $(LOCKFILE) sudo cp -f */*.$(PKGEXT) $(CHROOTPATH64)/root/repo ; \
+		flock $(LOCKFILE) sudo cp -f */*.$(PKGEXT) /var/cache/pacman/pkg ; \
+		flock $(LOCKFILE) sudo $(REPOADD) $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/*.$(PKGEXT) ; \
+	fi ;
 
 syncrepos: buildchroot recreaterepo
-	@if [[ -f $(LOCKFILE) ]]; then \
-		while [[ -f $(LOCKFILE) ]]; do sleep 3; done \
-	fi ; \
-	sudo touch $(LOCKFILE) ; \
-	sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root /bin/bash -c 'yes | $(PACMAN) -Syu ' ; \
-	sudo rm $(LOCKFILE) ; \
+	flock $(LOCKFILE) sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root /bin/bash -c 'yes | $(PACMAN) -Syu '
 
 resetchroot:
-	sudo rm -rf $(CHROOTPATH64) && $(MAKE) checkchroot
+	flock $(LOCKFILE) sudo rm -rf $(CHROOTPATH64) && $(MAKE) checkchroot
 
 
 build: $(DIRS)
@@ -96,7 +81,8 @@ check:
 	for d in $(DIRS) ; do \
 		if [[ ! -f $$d/built ]]; then \
 			_newpkgver=$$(bash -c "source $$d/PKGBUILD ; srcdir="$$(pwd)/$$d" pkgver ;") ; \
-			echo "$$d: $$_newpkgver" ; \
+			_pkgrel=$$(grep '^pkgrel=' $$d/PKGBUILD | cut -d'=' -f2 ) ;\
+			echo "$$d: $$_newpkgver-$$_pkgrel" ; \
 		fi \
 	done
 
@@ -116,8 +102,12 @@ check:
 	else \
 		touch $(PWD)/$*/built ; \
 	fi ; \
-	cd $(PWD) ; \
-	rm -f $(addsuffix /built, $(shell grep ' $* ' Makefile | cut -d':' -f1)) ; \
+
+%-deps:
+	@rm -f $(PWD)/$*/built ; \
+	for dep in $$(grep ' $* ' $(PWD)/Makefile | cut -d':' -f1) ; do \
+		$(MAKE) -s -C $(PWD) $$dep-deps ; \
+	done ; \
 
 $(DIRS): checkchroot
 	@if [ ! -f $(PWD)/$@/built ]; then \
@@ -144,17 +134,11 @@ gitpull: $(PULL_TARGETS)
 			if [ -f $(PWD)/$*/built ] && [ "$$(cat $(PWD)/$*/built)" != "$$(git log -1 | head -n1)" ]; then \
 				$(MAKE) -s -C $(PWD) $*-ver ; \
 				$(MAKE) -s -C $(PWD) $*-rel ; \
-				rm -f $(PWD)/$*/built ; \
-				for dep in $$(grep ' $* ' $(PWD)/Makefile | cut -d':' -f1) ; do \
-					rm -f $(PWD)/$$dep/built ; \
-				done ; \
+				$(MAKE) -s -C $(PWD) $*-deps ; \
 			fi ; \
 		else \
 			$(GITCLONE) $$_gitroot $(PWD)/$*/$$_gitname ; \
-			rm -f $(PWD)/$*/built ; \
-			for dep in $$(grep ' $* ' $(PWD)/Makefile | cut -d':' -f1) ; do \
-				rm -f $(PWD)/$$dep/built ; \
-			done ; \
+			$(MAKE) -s -C $(PWD) $*-deps ; \
 		fi ; \
 	fi ; \
 	cd $(PWD)
