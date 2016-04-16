@@ -7,7 +7,6 @@ PKGEXT=pkg.tar.xz
 GITFETCH=git remote update --prune
 GITCLONE=git clone --mirror
 CHROOTPATH64=/var/chroot64/$(REPO)
-MAKECHROOTPKG=OPTIND="--holdver --nocolor --noprogressbar" /usr/bin/makechrootpkg -c -u -r $(CHROOTPATH64)
 LOCKFILE=/tmp/$(REPO)-sync.lock
 PACMAN=pacman -q
 REPOADD=repo-add -n --nocolor -R
@@ -16,59 +15,39 @@ TARGETS=$(addsuffix /built, $(DIRS))
 PULL_TARGETS=$(addsuffix -pull, $(DIRS))
 VER_TARGETS=$(addsuffix -ver, $(DIRS))
 SHA_TARGETS=$(addsuffix -sha, $(DIRS))
+INFO_TARGETS=$(addsuffix -info, $(DIRS))
+BUILD_TARGETS=$(addsuffix -build, $(DIRS))
 
-.PHONY: $(DIRS) checkchroot
+.PHONY: $(DIRS) chroot
 
 all:
-	$(MAKE) gitpull
+	@$(MAKE) gitpull
 	$(MAKE) build
 
 clean:
-	sudo rm -rf */*.log */pkg */src */logpipe* $(CHROOTPATH64)
+	@sudo rm -rf */*.log */pkg */src */logpipe* $(CHROOTPATH64)
 
-reset: clean
-	sudo rm -f */built ; \
+resetall: clean
+	@sudo rm -f */built ; \
 	sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=0/" $(PWD)/**/PKGBUILD ; \
 
-checkchroot: emptyrepo recreaterepo syncrepos
-
-buildchroot:
-	@sudo mkdir -p $(CHROOTPATH64) ;\
-	if [[ ! -f $(CHROOTPATH64)/root/.arch-chroot ]]; then \
-		flock $(LOCKFILE) sudo $(MKARCHROOT) $(CHROOTPATH64)/root base-devel ; \
-		$(MAKE) installdeps ; \
-	fi ; \
-	sudo mkdir -p $(CHROOTPATH64)/root/repo ;\
-
-configchroot: buildchroot emptyrepo
-	@sudo cp $(PWD)/pacman.conf $(CHROOTPATH64)/root/etc/pacman.conf ;\
-	sudo cp $(PWD)/makepkg.conf $(CHROOTPATH64)/root/etc/makepkg.conf ;\
-	sudo cp $(PWD)/locale.conf $(CHROOTPATH64)/root/etc/locale.conf ;\
-
-emptyrepo: buildchroot
-	@if [[ ! -f $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz ]]; then \
-		flock $(LOCKFILE) sudo bsdtar -czf $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz -T /dev/null ; \
+chroot:
+	@if [[ ! -f $(CHROOTPATH64)/root/.arch-chroot ]]; then \
+		sudo mkdir -p $(CHROOTPATH64); \
+		sudo rm -rf $(CHROOTPATH64)/root; \
+		sudo $(MKARCHROOT) $(CHROOTPATH64)/root base-devel ; \
+		sudo cp $(PWD)/pacman.conf $(CHROOTPATH64)/root/etc/pacman.conf ;\
+		sudo cp $(PWD)/makepkg.conf $(CHROOTPATH64)/root/etc/makepkg.conf ;\
+		sudo cp $(PWD)/locale.conf $(CHROOTPATH64)/root/etc/locale.conf ;\
+		echo "MAKEFLAGS='-j$$(grep processor /proc/cpuinfo | wc -l)'" | sudo tee -a $(CHROOTPATH64)/root/etc/makepkg.conf ;\
+		sudo mkdir -p $(CHROOTPATH64)/root/repo ;\
+		sudo bsdtar -czf $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz -T /dev/null ; \
 		sudo ln -sf $(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/$(REPO).db ; \
+		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root /bin/bash -c 'yes | $(PACMAN) -Syu ; yes | $(PACMAN) -S gcc-multilib gcc-libs-multilib p7zip && chmod 777 /tmp' ; \
+		echo 'builduser ALL = NOPASSWD: /usr/bin/pacman' | sudo tee -a $(CHROOTPATH64)/root/etc/sudoers.d/builduser ; \
+		echo 'builduser:x:1000:100:builduser:/:/usr/bin/nologin\n' | sudo tee -a $(CHROOTPATH64)/root/etc/passwd ; \
+		sudo mkdir -p $(CHROOTPATH64)/root/build; \
 	fi ; \
-
-installdeps: buildchroot emptyrepo
-	flock $(LOCKFILE) sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root /bin/bash -c '$(PACMAN) -Sy ; yes | $(PACMAN) -S gcc-multilib gcc-libs-multilib p7zip'
-
-recreaterepo: buildchroot emptyrepo
-	@echo "Recreating working repo $(REPO)" ; \
-	sudo cp $(PWD)/pacman.conf $(CHROOTPATH64)/root/etc/pacman.conf ;\
-	if ls */*.$(PKGEXT) &> /dev/null ; then \
-		flock $(LOCKFILE) sudo cp -f */*.$(PKGEXT) $(CHROOTPATH64)/root/repo ; \
-		flock $(LOCKFILE) sudo cp -f */*.$(PKGEXT) /var/cache/pacman/pkg ; \
-		flock $(LOCKFILE) sudo $(REPOADD) $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/*.$(PKGEXT) ; \
-	fi ;
-
-syncrepos: buildchroot recreaterepo
-	flock $(LOCKFILE) sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root /bin/bash -c 'yes | $(PACMAN) -Syu '
-
-resetchroot:
-	flock $(LOCKFILE) sudo rm -rf $(CHROOTPATH64) && $(MAKE) checkchroot
-
 
 build: $(DIRS)
 
@@ -86,16 +65,25 @@ check:
 		fi \
 	done
 
+info: $(INFO_TARGETS)
+
+%-info:
+	@cd $(PWD)/$* ; \
+	makepkg --printsrcinfo | grep depends | while read p; do \
+		echo "$*: $$p" ; \
+	done ; \
+
 %/built:
 	@_gitname=$$(grep -R '^_gitname' $(PWD)/$*/PKGBUILD | sed -e 's/_gitname=//' -e "s/'//g" -e 's/"//g') && \
 	cd $* ; \
 	rm -f *.log ; \
 	mkdir -p $(PWD)/$*/tmp ; mv $(PWD)/$*/*$(PKGEXT) $(PWD)/$*/tmp ; \
-	sudo $(MAKECHROOTPKG) -l $* ; \
+	$(MAKE) -C $(PWD) $*-build ; \
 	if ! ls *.$(PKGEXT) &> /dev/null ; then \
 		mv $(PWD)/$*/tmp/*.$(PKGEXT) $(PWD)/$*/ && rm -rf $(PWD)/$*/tmp ; \
 		exit 1 ; \
 	fi ; \
+	sudo rm -rf $(CHROOTPATH64)/$* ; \
 	rm -rf $(PWD)/$*/tmp ; \
 	if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
 		cd $(PWD)/$*/$$_gitname ; git log -1 | head -n1 > $(PWD)/$*/built ; \
@@ -103,13 +91,31 @@ check:
 		touch $(PWD)/$*/built ; \
 	fi ; \
 
+%-chroot: chroot
+	@echo "==> Setting up chroot for [$*]" ; \
+	sudo rsync -a --delete -q -W -x $(CHROOTPATH64)/root/* $(CHROOTPATH64)/$* ; \
+
+%-sync: %-chroot
+	@echo "==> Syncing packages for [$*]" ; \
+	if ls */*.$(PKGEXT) &> /dev/null ; then \
+		sudo cp -f */*.$(PKGEXT) $(CHROOTPATH64)/$*/repo ; \
+		sudo $(REPOADD) $(CHROOTPATH64)/$*/repo/$(REPO).db.tar.gz $(CHROOTPATH64)/$*/repo/*.$(PKGEXT) > /dev/null 2>&1 ; \
+	fi ; \
+
+%-build: %-sync
+	@echo "==> Building [$*]" ; \
+	sudo mkdir -p $(CHROOTPATH64)/$*/build ; \
+	sudo rsync -a --delete -q -W -x $(PWD)/$* $(CHROOTPATH64)/$*/build/ ; \
+	sudo systemd-nspawn -q -D $(CHROOTPATH64)/$* /bin/bash -c 'yes | $(PACMAN) -Syu && chown builduser -R /build && cd /build/$* && sudo -u builduser makepkg -L --noconfirm --holdver --nocolor -sf > /dev/null'; \
+	cp $(CHROOTPATH64)/$*/build/$*/*.$(PKGEXT) $(CHROOTPATH64)/$*/build/$*/*.log $(PWD)/$*/
+
 %-deps:
 	@rm -f $(PWD)/$*/built ; \
 	for dep in $$(grep ' $* ' $(PWD)/Makefile | cut -d':' -f1) ; do \
 		$(MAKE) -s -C $(PWD) $$dep-deps ; \
 	done ; \
 
-$(DIRS): checkchroot
+$(DIRS): chroot
 	@if [ ! -f $(PWD)/$@/built ]; then \
 		_pkgrel=$$(grep -R '^pkgrel' $(PWD)/$@/PKGBUILD | sed -e 's/pkgrel=//' -e "s/'//g" -e 's/"//g') && \
 		sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=$$(($$_pkgrel+1))/" $(PWD)/$@/PKGBUILD ; \
@@ -118,7 +124,7 @@ $(DIRS): checkchroot
 			exit 1 ; \
 		fi ; \
 	fi ; \
-	sudo rm -rf $(CHROOTPATH64)/$@
+	sudo rm -rf $(CHROOTPATH64)/$@ $(CHROOTPATH64)/$@.lock ; \
 
 gitpull: $(PULL_TARGETS)
 
@@ -159,7 +165,8 @@ updateshas: $(SHA_TARGETS)
 %-sha:
 	@cd $(PWD)/$* && updpkgsums
 
+
 -include Makefile.mk
 
-firefox-nightly: syncrepos
+firefox-nightly: chroot
 
