@@ -4,7 +4,6 @@ DIRS=$(shell ls -d */ | sed -e 's/\///' )
 ARCHNSPAWN=arch-nspawn
 MKARCHROOT=/usr/bin/mkarchroot -C /usr/share/devtools/pacman-multilib.conf
 PKGEXT=pkg.tar.xz
-GITFETCH=git remote update --prune
 GITCLONE=git clone --mirror
 CHROOTPATH64=/var/chroot64/$(REPO)
 LOCKFILE=/tmp/$(REPO)-sync.lock
@@ -13,10 +12,10 @@ REPOADD=repo-add -n --nocolor -R
 
 TARGETS=$(addsuffix /built, $(DIRS))
 PULL_TARGETS=$(addsuffix -pull, $(DIRS))
-VER_TARGETS=$(addsuffix -ver, $(DIRS))
 SHA_TARGETS=$(addsuffix -sha, $(DIRS))
 INFO_TARGETS=$(addsuffix -info, $(DIRS))
 BUILD_TARGETS=$(addsuffix -build, $(DIRS))
+CHECKVER_TARGETS=$(addsuffix -checkver, $(DIRS))
 
 .PHONY: $(DIRS) chroot
 
@@ -52,16 +51,10 @@ chroot:
 build: $(DIRS)
 
 check:
-	@echo "REPO    : $(REPO)" ; \
-	echo "DIRS    : $(DIRS)" ; \
-	echo "PKGEXT  : $(PKGEXT)" ; \
-	echo "GITFETCH: $(GITFETCH)" ; \
-	echo "GITCLONE: $(GITCLONE)" ; \
+	@echo "==> REPO: $(REPO)" ; \
 	for d in $(DIRS) ; do \
 		if [[ ! -f $$d/built ]]; then \
-			_newpkgver=$$(bash -c "source $$d/PKGBUILD ; srcdir="$$(pwd)/$$d" pkgver ;") ; \
-			_pkgrel=$$(grep '^pkgrel=' $$d/PKGBUILD | cut -d'=' -f2 ) ;\
-			echo "$$d: $$_newpkgver-$$_pkgrel" ; \
+			$(MAKE) --silent -C $(PWD) $$d-files; \
 		fi \
 	done
 
@@ -72,24 +65,6 @@ info: $(INFO_TARGETS)
 	makepkg --printsrcinfo | grep depends | while read p; do \
 		echo "$*: $$p" ; \
 	done ; \
-
-%/built:
-	@_gitname=$$(grep -R '^_gitname' $(PWD)/$*/PKGBUILD | sed -e 's/_gitname=//' -e "s/'//g" -e 's/"//g') && \
-	cd $* ; \
-	rm -f *.log ; \
-	mkdir -p $(PWD)/$*/tmp ; mv $(PWD)/$*/*$(PKGEXT) $(PWD)/$*/tmp ; \
-	$(MAKE) -C $(PWD) $*-build ; \
-	if ! ls *.$(PKGEXT) &> /dev/null ; then \
-		mv $(PWD)/$*/tmp/*.$(PKGEXT) $(PWD)/$*/ && rm -rf $(PWD)/$*/tmp ; \
-		exit 1 ; \
-	fi ; \
-	sudo rm -rf $(CHROOTPATH64)/$* ; \
-	rm -rf $(PWD)/$*/tmp ; \
-	if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
-		cd $(PWD)/$*/$$_gitname ; git log -1 | head -n1 > $(PWD)/$*/built ; \
-	else \
-		touch $(PWD)/$*/built ; \
-	fi ; \
 
 %-chroot: chroot
 	@echo "==> Setting up chroot for [$*]" ; \
@@ -102,63 +77,127 @@ info: $(INFO_TARGETS)
 		sudo $(REPOADD) $(CHROOTPATH64)/$*/repo/$(REPO).db.tar.gz $(CHROOTPATH64)/$*/repo/*.$(PKGEXT) > /dev/null 2>&1 ; \
 	fi ; \
 
-%-build: %-sync
+%/built: %-sync
 	@echo "==> Building [$*]" ; \
+	rm -f *.log ; \
+	mkdir -p $(PWD)/$*/tmp ; mv $(PWD)/$*/*$(PKGEXT) $(PWD)/$*/tmp ; \
 	sudo mkdir -p $(CHROOTPATH64)/$*/build ; \
 	sudo rsync -a --delete -q -W -x $(PWD)/$* $(CHROOTPATH64)/$*/build/ ; \
-	sudo systemd-nspawn -q -D $(CHROOTPATH64)/$* /bin/bash -c 'yes | $(PACMAN) -Syu && chown builduser -R /build && cd /build/$* && sudo -u builduser makepkg -L --noconfirm --holdver --nocolor -sf > /dev/null'; \
-	cp $(CHROOTPATH64)/$*/build/$*/*.$(PKGEXT) $(CHROOTPATH64)/$*/build/$*/*.log $(PWD)/$*/
+	_pkgrel=$$(grep '^pkgrel=' $(CHROOTPATH64)/$*/build/$*/PKGBUILD | cut -d'=' -f2 ) ;\
+	_pkgrel=$$(($$_pkgrel+1)) ; \
+	sed -i "s/^pkgrel=[^ ]*/pkgrel=$$_pkgrel/" $(CHROOTPATH64)/$*/build/$*/PKGBUILD ; \
+	sudo systemd-nspawn -q -D $(CHROOTPATH64)/$* /bin/bash -c 'yes | $(PACMAN) -Syu && chown builduser -R /build && cd /build/$* && sudo -u builduser makepkg -L --noconfirm --holdver --nocolor -sf > makepkg.log'; \
+	_pkgver=$$(bash -c "cd $(PWD)/$* ; source PKGBUILD ; if type -t pkgver | grep -q '^function$$' 2>/dev/null ; then srcdir=$$(pwd) pkgver ; fi") ; \
+	if [ -z "$$_pkgver" ] ; then \
+		_pkgver=$$(grep '^pkgver=' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") ; \
+	fi ; \
+	_pkgnames=$$(grep -Pzo "pkgname=\((?s)(.*?)\)" $(PWD)/$*/PKGBUILD | sed -e "s/\|'\|\"\|(\|)\|.*=//g") ; \
+	if [ -z "$$_pkgnames" ] ; then \
+		_pkgnames=$$(grep '^pkgname=' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") ; \
+	fi ; \
+	for pkgname in $$_pkgnames; do \
+		if ! ls $(CHROOTPATH64)/$*/build/$*/$$pkgname-*$$_pkgver-$$_pkgrel-*$(PKGEXT) 1> /dev/null 2>&1; then \
+			echo "==> Could not find $(CHROOTPATH64)/$*/build/$*/$$pkgname-*$$_pkgver-$$_pkgrel-*$(PKGEXT)" ; \
+			rm -f $(PWD)/$*/*.$(PKGEXT) ; \
+			mv $(PWD)/$*/tmp/*.$(PKGEXT) $(PWD)/$*/ && rm -rf $(PWD)/$*/tmp ; \
+			exit 1; \
+		else \
+			cp $(CHROOTPATH64)/$*/build/$*/$$pkgname-*$$_pkgver-*$(PKGEXT) $(PWD)/$*/ ; \
+		fi ; \
+	done ; \
+	cp $(CHROOTPATH64)/$*/build/$*/*.log $(PWD)/$*/ ; \
+    cp $(CHROOTPATH64)/$*/build/$*/PKGBUILD $(PWD)/$*/PKGBUILD ; \
+	rm -rf $(PWD)/$*/tmp ; \
+	touch $(PWD)/$*/built
+
+$(DIRS): chroot
+	@if [ ! -f $(PWD)/$@/built ]; then \
+		if ! $(MAKE) $@/built ; then \
+			exit 1 ; \
+		fi ; \
+	fi ; \
+	sudo rm -rf $(CHROOTPATH64)/$@ $(CHROOTPATH64)/$@.lock
 
 %-deps:
-	@rm -f $(PWD)/$*/built ; \
+	@echo "==> Marking dependencies for rebuild [$*]" ; \
+	rm -f $(PWD)/$*/built ; \
 	for dep in $$(grep ' $* ' $(PWD)/Makefile | cut -d':' -f1) ; do \
 		$(MAKE) -s -C $(PWD) $$dep-deps ; \
 	done ; \
 
-$(DIRS): chroot
-	@if [ ! -f $(PWD)/$@/built ]; then \
-		_pkgrel=$$(grep -R '^pkgrel' $(PWD)/$@/PKGBUILD | sed -e 's/pkgrel=//' -e "s/'//g" -e 's/"//g') && \
-		sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=$$(($$_pkgrel+1))/" $(PWD)/$@/PKGBUILD ; \
-		if ! $(MAKE) $@/built ; then \
-			sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=$$_pkgrel/" $(PWD)/$@/PKGBUILD ; \
-			exit 1 ; \
-		fi ; \
-	fi ; \
-	sudo rm -rf $(CHROOTPATH64)/$@ $(CHROOTPATH64)/$@.lock ; \
 
 gitpull: $(PULL_TARGETS)
 
 %-pull:
-	@_gitroot=$$(grep -R '^_gitroot' $(PWD)/$*/PKGBUILD | sed -e 's/_gitroot=//' -e "s/'//g" -e 's/"//g') && \
-	_gitname=$$(grep -R '^_gitname' $(PWD)/$*/PKGBUILD | sed -e 's/_gitname=//' -e "s/'//g" -e 's/"//g') && \
+	@_gitroot=$$(grep '^_gitroot' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") && \
+	_gitname=$$(grep '^_gitname' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") && \
 	if [ ! -z "$$_gitroot" ] ; then \
 		if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
 			for f in $(PWD)/$*/*/HEAD; do \
-				cd $$(dirname $$f) && $(GITFETCH) ; \
+				git --git-dir=$$(dirname $$f) remote update --prune ; \
 			done ; \
-			cd $(PWD)/$*/$$_gitname && \
-			if [ -f $(PWD)/$*/built ] && [ "$$(cat $(PWD)/$*/built)" != "$$(git log -1 | head -n1)" ]; then \
-				$(MAKE) -s -C $(PWD) $*-ver ; \
-				$(MAKE) -s -C $(PWD) $*-rel ; \
-				$(MAKE) -s -C $(PWD) $*-deps ; \
-			fi ; \
 		else \
 			$(GITCLONE) $$_gitroot $(PWD)/$*/$$_gitname ; \
-			$(MAKE) -s -C $(PWD) $*-deps ; \
 		fi ; \
 	fi ; \
-	cd $(PWD)
+	_pkgver=$$(bash -c "cd $(PWD)/$* ; source PKGBUILD ; if type -t pkgver | grep -q '^function$$' 2>/dev/null ; then pkgver ; fi") ; \
+	if [ ! -z "$$_pkgver" ] ; then \
+		echo "==> Updating pkgver [$*]" ; \
+		sed -i "s/^pkgver=[^ ]*/pkgver=$$_pkgver/" $(PWD)/$*/PKGBUILD ; \
+	else \
+		_pkgver=$$(grep '^pkgver=' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") ; \
+	fi ; \
+	if [ ! -z "$$_pkgver" ] ; then \
+		_pkgnames=$$(grep -Pzo "pkgname=\((?s)(.*?)\)" $(PWD)/$*/PKGBUILD | sed -e "s/\|'\|\"\|(\|)\|.*=//g") ; \
+		if [ -z "$$_pkgnames" ] ; then \
+			_pkgnames=$$(grep '^pkgname=' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") ; \
+		fi ; \
+		for pkgname in $$_pkgnames; do \
+			if ! ls $(PWD)/$*/$$pkgname-*$$_pkgver-*$(PKGEXT) 1> /dev/null 2>&1; then \
+				echo "==> Updating pkgrel [$*]" ; \
+				sed -i "s/^pkgrel=[^ ]*/pkgrel=0/" $(PWD)/$*/PKGBUILD ; \
+				$(MAKE) -s -C $(PWD) $*-deps ; \
+				break ; \
+			fi ; \
+		done ; \
+	fi ; \
 
-vers: $(VER_TARGETS)
+checkvers: $(CHECKVER_TARGETS)
 
-%-ver:
-	@cd $(PWD)/$* ; \
-	_newpkgver=$$(bash -c "source PKGBUILD ; srcdir=$$(pwd) pkgver ;") ; \
-	sed --follow-symlinks -i "s/^pkgver=[^ ]*/pkgver=$$_newpkgver/" PKGBUILD ; \
-	echo "$*: $$_newpkgver"
+%-checkver:
+	@_pkgver=$$(bash -c "cd $(PWD)/$* ; source PKGBUILD ; if type -t pkgver | grep -q '^function$$' 2>/dev/null ; then pkgver ; fi") ; \
+	if [ ! -z "$$_pkgver" ] ; then \
+		echo "==> Updating pkgver [$*]" ; \
+		sed -i "s/^pkgver=[^ ]*/pkgver=$$_pkgver/" $(PWD)/$*/PKGBUILD ; \
+	else \
+		_pkgver=$$(grep '^pkgver=' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") ; \
+	fi ; \
+	echo "==> Package [$*]: $$_pkgver" ; \
+	if [ ! -z "$$_pkgver" ] ; then \
+		_pkgnames=$$(grep -Pzo "pkgname=\((?s)(.*?)\)" $(PWD)/$*/PKGBUILD | sed -e "s/\|'\|\"\|(\|)\|.*=//g") ; \
+		if [ -z "$$_pkgnames" ] ; then \
+			_pkgnames=$$(grep '^pkgname=' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") ; \
+		fi ; \
+		for pkgname in $$_pkgnames; do \
+			if ! ls $(PWD)/$*/$$pkgname-*$$_pkgver-*$(PKGEXT) 1> /dev/null 2>&1; then \
+				echo "==> Updating pkgrel [$*]" ; \
+				sed -i "s/^pkgrel=[^ ]*/pkgrel=0/" $(PWD)/$*/PKGBUILD ; \
+				break ; \
+			fi ; \
+		done ; \
+	fi ; \
 
-%-rel:
-	@sed --follow-symlinks -i "s/^pkgrel=[^ ]*/pkgrel=0/" $(PWD)/$*/PKGBUILD ; \
+%-files:
+	@_pkgver=$$(grep '^pkgver=' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") ; \
+	_pkgrel=$$(grep '^pkgrel=' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") ; \
+	_fullver="$$_pkgver-$$_pkgrel" ; \
+	_pkgnames=$$(grep -Pzo "pkgname=\((?s)(.*?)\)" $(PWD)/$*/PKGBUILD | sed -e "s/\|'\|\"\|(\|)\|.*=//g") ; \
+	if [ -z "$$_pkgnames" ] ; then \
+		_pkgnames=$$(grep '^pkgname=' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") ; \
+	fi ; \
+	for _pkgname in $$_pkgnames; do \
+		echo "==> Rebuild $*: $$_pkgname-$$_fullver" ; \
+	done ; \
 
 updateshas: $(SHA_TARGETS)
 
