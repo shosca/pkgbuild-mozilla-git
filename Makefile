@@ -4,7 +4,6 @@ DIRS=$(shell ls -d */ | sed -e 's/\///' )
 ARCHNSPAWN=arch-nspawn
 MKARCHROOT=/usr/bin/mkarchroot -C /usr/share/devtools/pacman-multilib.conf
 PKGEXT=pkg.tar.xz
-GITCLONE=git clone --mirror
 CHROOTPATH64=/var/chroot64/$(REPO)
 LOCKFILE=/tmp/$(REPO)-sync.lock
 PACMAN=pacman -q
@@ -126,21 +125,33 @@ $(DIRS): chroot
 	done ; \
 
 
-gitpull: $(PULL_TARGETS)
+srcpull: $(PULL_TARGETS)
 
-%-pull:
+%-vcs:
 	@_gitroot=$$(grep '^_gitroot' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") && \
-	_gitname=$$(grep '^_gitname' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") && \
+	_hgroot=$$(grep '^_hgroot' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") && \
 	if [ ! -z "$$_gitroot" ] ; then \
+		_gitname=$$(grep '^_gitname' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") && \
 		if [ -f $(PWD)/$*/$$_gitname/HEAD ]; then \
 			for f in $(PWD)/$*/*/HEAD; do \
 				git --git-dir=$$(dirname $$f) remote update --prune ; \
 			done ; \
 		else \
-			$(GITCLONE) $$_gitroot $(PWD)/$*/$$_gitname ; \
+			git clone --mirror $$_gitroot $(PWD)/$*/$$_gitname ; \
+		fi ; \
+	elif [ ! -z "$$_hgroot" ] ; then \
+		_hgname=$$(grep '^_hgname' $(PWD)/$*/PKGBUILD | sed -e "s/'\|\"\|.*=//g") && \
+		if [ -d $(PWD)/$*/$$_hgname/.hg ]; then \
+			for f in $(PWD)/$*/*/.hg; do \
+				hg --cwd=$$(dirname $$f) pull ; \
+			done ; \
+		else \
+			 hg clone -U $$_hgroot $(PWD)/$*/$$_hgname ; \
 		fi ; \
 	fi ; \
-	_pkgver=$$(bash -c "cd $(PWD)/$* ; source PKGBUILD ; if type -t pkgver | grep -q '^function$$' 2>/dev/null ; then pkgver ; fi") ; \
+
+%-pull: %-vcs
+	@_pkgver=$$(bash -c "cd $(PWD)/$* ; source PKGBUILD ; if type -t pkgver | grep -q '^function$$' 2>/dev/null ; then pkgver ; fi") ; \
 	if [ ! -z "$$_pkgver" ] ; then \
 		echo "==> Updating pkgver [$*]" ; \
 		sed -i "s/^pkgver=[^ ]*/pkgver=$$_pkgver/" $(PWD)/$*/PKGBUILD ; \

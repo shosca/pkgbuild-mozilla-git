@@ -1,12 +1,12 @@
 # $Id$
 # Maintainer: Jan Alexander Steffens (heftig) <jan.steffens@gmail.com>
 
-_gitroot="git://github.com/mozilla/gecko-dev"
-_gitname="repo-gecko-dev"
+_hgroot="https://hg.mozilla.org/mozilla-central"
+_hgname="repo-mozilla-central"
 
 pkgname=firefox-nightly
-pkgver=49.0a1.r472825.gd60d2af
-pkgrel=1
+pkgver=49.0a1.r295480.g2b7c421063ad
+pkgrel=0
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -14,7 +14,7 @@ url="http://www.mozilla.com/en-US/firefox/channel/"
 depends=('gtk2' 'gtk3' 'mozilla-common' 'libxt' 'startup-notification' 'mime-types'
          'dbus-glib' 'alsa-lib' 'desktop-file-utils' 'hicolor-icon-theme'
          'libvpx' 'libevent' 'libpng' 'nss' 'hunspell' 'sqlite' 'gconf')
-makedepends=('git' 'autoconf2.13' 'unzip' 'zip' 'diffutils' 'python2' 'yasm' 'mesa' 'imake'
+makedepends=('mercurial' 'autoconf2.13' 'unzip' 'zip' 'diffutils' 'python2' 'yasm' 'mesa' 'imake'
              'xorg-server-xvfb' 'libpulse' 'gstreamer0.10-base'
              'inetutils')
 optdepends=('networkmanager: Location detection via available WiFi networks'
@@ -26,7 +26,7 @@ optdepends=('networkmanager: Location detection via available WiFi networks'
             'libpulse: PulseAudio audio driver')
 install=firefox-nightly.install
 options=(!emptydirs !makeflags)
-source=($_gitname::$_gitroot
+source=($_hgname::$_hgroot
         firefox-nightly.desktop
         firefox-install-dir.patch
         vendor.js)
@@ -42,15 +42,15 @@ md5sums=('SKIP'
 _google_api_key=AIzaSyDwr302FpOSkGRpLlUpPThNTDPbXcIn_FM
 
 pkgver() {
-  cd "$_gitname"
-  printf "%s.r%s.g%s" \
-    "$(git show HEAD:browser/config/version.txt)" \
-    "$(git rev-list --count HEAD)" \
-    "$(git rev-parse --short HEAD)"
+  cd "$_hgname"
+  local _hgrev=$(hg id default)
+  printf "%s.r%s.g$_hgrev" \
+    "$(hg cat -r $_hgrev browser/config/version.txt)" \
+    "$(hg id -n -r $_hgrev)"
 }
 
 prepare() {
-  cd ${srcdir}/${_gitname}
+  cd ${srcdir}/${_hgname}
 
   cat >.mozconfig <<EOF
 ac_add_options --prefix=/usr
@@ -129,7 +129,7 @@ EOF
 }
 
 build() {
-  cd ${srcdir}/${_gitname}
+  cd ${srcdir}/${_hgname}
 
   export PATH="$srcdir/path:$PATH"
   export LDFLAGS=
@@ -140,7 +140,7 @@ build() {
 }
 
 package() {
-  cd ${srcdir}/${_gitname}
+  cd ${srcdir}/${_hgname}
 
   export PATH="$srcdir/path:$PATH"
   export PYTHON="/usr/bin/python2"
