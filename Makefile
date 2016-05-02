@@ -19,7 +19,7 @@ CHECKVER_TARGETS=$(addsuffix -checkver, $(DIRS))
 .PHONY: $(DIRS) chroot
 
 all:
-	@$(MAKE) gitpull
+	@$(MAKE) srcpull
 	$(MAKE) build
 
 clean:
@@ -41,9 +41,9 @@ chroot:
 		sudo mkdir -p $(CHROOTPATH64)/root/repo ;\
 		sudo bsdtar -czf $(CHROOTPATH64)/root/repo/$(REPO).db.tar.gz -T /dev/null ; \
 		sudo ln -sf $(REPO).db.tar.gz $(CHROOTPATH64)/root/repo/$(REPO).db ; \
-		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root /bin/bash -c 'yes | $(PACMAN) -Syu ; yes | $(PACMAN) -S gcc-multilib gcc-libs-multilib p7zip && chmod 777 /tmp' ; \
-		echo 'builduser ALL = NOPASSWD: /usr/bin/pacman' | sudo tee -a $(CHROOTPATH64)/root/etc/sudoers.d/builduser ; \
-		echo 'builduser:x:1000:100:builduser:/:/usr/bin/nologin\n' | sudo tee -a $(CHROOTPATH64)/root/etc/passwd ; \
+		sudo $(ARCHNSPAWN) $(CHROOTPATH64)/root /bin/bash -c "yes | $(PACMAN) -Syu ; yes | $(PACMAN) -S gcc-multilib gcc-libs-multilib p7zip && chmod 777 /tmp" ; \
+		echo "builduser ALL = NOPASSWD: /usr/bin/pacman" | sudo tee -a $(CHROOTPATH64)/root/etc/sudoers.d/builduser ; \
+		echo "builduser:x:$${SUDO_UID:-$$UID}:100:builduser:/:/usr/bin/nologin\n" | sudo tee -a $(CHROOTPATH64)/root/etc/passwd ; \
 		sudo mkdir -p $(CHROOTPATH64)/root/build; \
 	fi ; \
 
@@ -51,6 +51,7 @@ build: $(DIRS)
 
 check:
 	@echo "==> REPO: $(REPO)" ; \
+	echo "==> UID: $${SUDO_UID:-$$UID}" ; \
 	for d in $(DIRS) ; do \
 		if [[ ! -f $$d/built ]]; then \
 			$(MAKE) --silent -C $(PWD) $$d-files; \
