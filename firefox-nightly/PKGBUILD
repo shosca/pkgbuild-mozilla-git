@@ -5,8 +5,8 @@ _gitroot="https://github.com/mozilla/gecko-dev"
 _gitname="repo-mozilla-central"
 
 pkgname=firefox-nightly
-pkgver=50.0a1.r479664.g26ac166
-pkgrel=1
+pkgver=50.0a1.r484917.g3c40ac6
+pkgrel=2
 pkgdesc="Testing version of the popular Firefox web browser"
 arch=(i686 x86_64)
 license=(MPL GPL LGPL)
@@ -29,13 +29,11 @@ options=(!emptydirs !makeflags)
 source=($_gitname::git+$_gitroot
         firefox-nightly.desktop
         firefox-install-dir.patch
-        vendor.js
-        wayland.patch)
+        vendor.js)
 md5sums=('SKIP'
          '21854d13a2c534506610743e3bd9b993'
          'cdd40dbd691d26365a3d4522b9cb86c6'
-         'c164319e8dd09354fd6a8d42b923a16c'
-         'a41f09a1484489aada1c4c78bd808300')
+         'c164319e8dd09354fd6a8d42b923a16c')
 
 # Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
 # Note: These are for Arch Linux use ONLY. For your own distribution, please
@@ -56,57 +54,40 @@ prepare() {
 
   cat >.mozconfig <<EOF
 ac_add_options --prefix=/usr
-#ac_add_options --libdir=/usr/lib
+ac_add_options --enable-release
+ac_add_options --enable-gold
+ac_add_options --enable-pie
 
 ac_add_options --with-branding=browser/branding/nightly
 
 # system libraries
-#ac_add_options --with-pthreads
-#ac_add_options --with-system-bz2
-##ac_add_options --with-system-icu
-##ac_add_options --with-system-libvpx
-#ac_add_options --with-system-zlib
-#ac_add_options --with-system-jpeg
-##ac_add_options --with-system-libevent
-##ac_add_options --with-system-nspr
-##ac_add_options --with-system-nss
-##ac_add_options --with-system-png
-
-##ac_add_options --enable-canvas
-#ac_add_options --enable-chrome-format=omni
-#ac_add_options --enable-extensions=default
-#ac_add_options --enable-gio
-##ac_add_options --enable-gstreamer
-##ac_add_options --enable-libnotify
-#ac_add_options --enable-necko-wifi
-#ac_add_options --enable-pango
-#ac_add_options --enable-pulseaudio
-#ac_add_options --enable-startup-notification
-#ac_add_options --enable-system-cairo
-#ac_add_options --enable-system-ffi
-#ac_add_options --enable-system-hunspell
-#ac_add_options --enable-system-pixman
-
+#ac_add_options --with-system-nspr
+#ac_add_options --with-system-nss
+#ac_add_options --with-system-icu
+ac_add_options --with-system-jpeg
+ac_add_options --with-system-zlib
+ac_add_options --with-system-bz2
+ac_add_options --with-system-libevent
+ac_add_options --with-system-libvpx
+ac_add_options --enable-system-hunspell
+ac_add_options --enable-system-sqlite
+ac_add_options --enable-system-ffi
+ac_add_options --enable-system-pixman
+#ac_add_options --with-gl-provider=EGL
 ac_add_options --enable-default-toolkit=cairo-gtk3
 
-#ac_add_options --disable-crashreporter
-#ac_add_options --disable-gnomevfs
-#ac_add_options --disable-installer
-#ac_add_options --disable-javaxpcom
-#ac_add_options --disable-mochitest
-#ac_add_options --disable-tests
-#ac_add_options --disable-updater
-#ac_add_options --disable-xprint
+# Features
+ac_add_options --disable-startup-notification
+ac_add_options --disable-crashreporter
+ac_add_options --disable-tests
+ac_add_options --disable-updater
 
-# PGO
-#mk_add_options PROFILE_GEN_SCRIPT='EXTRA_TEST_ARGS=10 \$(MAKE) -C \$(MOZ_OBJDIR) pgo-profile-run'
-mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/objdir
+STRIP_FLAGS='--strip-debug'
 EOF
 
   echo -n "$_google_api_key" > google-api-key
   echo "ac_add_options --with-google-api-keyfile=\"$PWD/google-api-key\"" >>.mozconfig
 
-  patch -Np1 -i ../wayland.patch
   patch -Np1 -i ../firefox-install-dir.patch
 
   # Name it nightly
