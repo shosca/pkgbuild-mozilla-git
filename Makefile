@@ -220,4 +220,3 @@ updateshas: $(SHA_TARGETS)
 -include Makefile.mk
 
 firefox-nightly: chroot
-
